@@ -5,7 +5,8 @@ import { Client } from "boardgame.io/react";
 import { SocketIO } from "boardgame.io/multiplayer";
 import { Lobby } from "boardgame.io/react";
 import { HexChess } from "./Game";
-import { HexChessBoard } from "./Board";
+//import { HexChessBoard } from "./Board";
+import HexChessBoard from "./Board";
 
 class AppType {
   static Solo = new AppType("solo");
@@ -23,26 +24,13 @@ class App extends React.Component {
   render() {
     if (this.state.appType === null) {
       return (
-        <div className="divTitle">
+        <div className="app">
           <p>What app type to load?</p>
-          <button
-            className="buttonAppType"
-            onClick={() => this.setState({ appType: AppType.Solo })}
-          >
-            Solo
-          </button>
-          <button
-            className="buttonAppType"
-            onClick={() => this.setState({ appType: AppType.Multiplayer })}
-          >
+          <button onClick={() => this.setState({ appType: AppType.Solo })}>Solo</button>
+          <button onClick={() => this.setState({ appType: AppType.Multiplayer })}>
             Multiplayer
           </button>
-          <button
-            className="buttonAppType"
-            onClick={() => this.setState({ appType: AppType.Lobby })}
-          >
-            Lobby
-          </button>
+          <button onClick={() => this.setState({ appType: AppType.Lobby })}>Lobby</button>
         </div>
       );
     }
@@ -55,20 +43,10 @@ class App extends React.Component {
         });
         if (this.state.playerID === null) {
           return (
-            <div className="divTitle">
+            <div className="app">
               <p>Play as</p>
-              <button
-                className="buttonPlayer"
-                onClick={() => this.setState({ playerID: "0" })}
-              >
-                Player 0
-              </button>
-              <button
-                className="buttonPlayer"
-                onClick={() => this.setState({ playerID: "1" })}
-              >
-                Player 1
-              </button>
+              <button onClick={() => this.setState({ playerID: "0" })}>Player 0</button>
+              <button onClick={() => this.setState({ playerID: "1" })}>Player 1</button>
             </div>
           );
         }
@@ -80,17 +58,19 @@ class App extends React.Component {
       }
       case AppType.Lobby:
         return (
-          <Lobby
-            className="lobbyStyle"
-            gameServer={`http://${window.location.hostname}:8000`}
-            lobbyServer={`http://${window.location.hostname}:8000`}
-            gameComponents={[
-              {
-                game: HexChess,
-                board: HexChessBoard,
-              },
-            ]}
-          />
+          <div className="lobbyStyle">
+            <Lobby
+              //needs to be https when I deploy
+              gameServer={`http://${window.location.hostname}:8000`}
+              lobbyServer={`http://${window.location.hostname}:8000`}
+              gameComponents={[
+                {
+                  game: HexChess,
+                  board: HexChessBoard,
+                },
+              ]}
+            />
+          </div>
         );
       default: {
         const HexChessClient = Client({

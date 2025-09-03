@@ -1,32 +1,54 @@
 #board {
-    border-collapse: collapse;
-    font-family: monospace;
+  border-collapse: collapse;
+  font-family: monospace;
+  display: flex;
+  flex-direction: column;
+  /* align-items: center;
+  justify-content: center; */
+}
+
+#board td {
+  text-align: center;
+  font-weight: bold;
+  font-size: 75px;
+  color: #555;
+  width: 150px;
+  height: 150px;
+  line-height: 150px;
+  border: 5px solid #aaa;
+  background: #fff;
+}
+
+#board td.active {
+  cursor: pointer;
+  background: #eeffe9;
+}
+
+#board td.active:hover {
+  background: #eeffff;
+}
+
+#board polygon {
+  fill: #fff;
+  stroke: #222;
+  stroke-width: 2;
+}
+
+#board polygon.active {
+  fill: #eeffe9;
+}
+#board polygon.active:hover {
+  fill: #eeffff;
+}
+
+#board text.index {
+  font-size: 12px;
+  fill: #555;
 }
 
 #winner {
-    margin-top: 5px;
-    width: 450px;
-    text-align: center;
-    font-size: 50px;
-}
-
-td {
-    text-align: center;
-    font-weight: bold;
-    font-size: 75px;
-    color: #555;
-    width: 150px;
-    height: 150px;
-    line-height: 150px;
-    border: 5px solid #aaa;
-    background: #fff;
-}
-
-td.active {
-    cursor: pointer;
-    background: #eeffe9;
-}
-
-td.active:hover {
-    background: #eeffff;
+  margin-top: 5px;
+  width: 450;
+  text-align: left;
+  font-size: 50px;
 }

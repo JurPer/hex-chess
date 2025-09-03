@@ -5,15 +5,11 @@
   text-align: center;
 }
 
-.divTitle {
+#app {
   font-size: 50px;
 }
 
-.lobbyStyle {
-  font-size: 10px;
-}
-
-.buttonAppType {
+.app button {
   background-color: #04aa6d;
   border: solid;
   color: white;
@@ -24,13 +20,24 @@
   font-size: 32px;
 }
 
-.buttonPlayer {
-  background-color: #e51e10;
-  border: solid;
-  color: white;
-  padding: 15px 32px;
+#lobby-view {
+  font-size: 20px;
   text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 32px;
+}
+
+#lobby-view table {
+  font-size: 25px;
+  display: flex;
+  justify-content: center;
+}
+
+#lobby-view td {
+  border: 1px solid #aaa;
+}
+
+#lobby-view button,
+#lobby-view input,
+#lobby-view select,
+#lobby-view textarea {
+  font: inherit;
 }
