@@ -2,7 +2,7 @@ import React from "react";
 import "./App.css";
 
 import { Client } from "boardgame.io/react";
-import { SocketIO } from "boardgame.io/multiplayer";
+import { Local, SocketIO } from "boardgame.io/multiplayer";
 import { Lobby } from "boardgame.io/react";
 import { HexChess } from "./Game";
 //import { HexChessBoard } from "./Board";

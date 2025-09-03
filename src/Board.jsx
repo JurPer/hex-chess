@@ -20,6 +20,7 @@ function hexPointsFlat(cx, cy, size) {
   }
   return pts.join(" ");
 }
+
 function sortColsBottomToTopFlat(coords) {
   // flat-top layout ⇒ x depends only on q, so q sorts columns left→right.
   // within same column, larger r is lower on screen ⇒ sort r DESC (bottom→top).
@@ -81,7 +82,6 @@ function hexagonStarAxial(R = 2) {
   }
 
   const axial = Array.from(out.values()).map(toAxial);
-  console.log("HexChessBoard has", axial.length, "cells.");
   // Expected total: 6R^2 + 6R + 1
   const expected = 6 * R * R + 6 * R + 1;
   if (axial.length !== expected) {
@@ -93,13 +93,7 @@ function hexagonStarAxial(R = 2) {
   return sortColsBottomToTopFlat(axial);
 }
 
-//const boardSize = this.props.G.boardSize;
-//const COORDS = hexagonStarAxial(this.props.G.boardSize);
-const COORDS = hexagonStarAxial(2);
-
 export default class HexChessBoard extends React.Component {
-  static defaultProps = { size: 35 }; // hex size in px
-
   onClick = (id) => {
     if (this.isActive(id) && this.props.moves?.clickCell) {
       this.props.moves.clickCell(id);
@@ -113,7 +107,8 @@ export default class HexChessBoard extends React.Component {
   }
 
   render() {
-    const size = this.props.size;
+    const COORDS = hexagonStarAxial(this.props.G.boardSize);
+    const size = 35; // hex size in px
 
     // centers for each hex
     const centers = COORDS.map(({ q, r }) => axialToPixelFlat(q, r, size));
