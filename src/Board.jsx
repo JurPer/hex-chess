@@ -107,7 +107,7 @@ export default class HexChessBoard extends React.Component {
   }
 
   render() {
-    const COORDS = hexagonStarAxial(this.props.G.boardSize);
+    const COORDS = hexagonStarAxial(2);
     const size = 35; // hex size in px
 
     // centers for each hex
