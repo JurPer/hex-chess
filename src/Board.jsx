@@ -20,6 +20,11 @@ function hexPointsFlat(cx, cy, size) {
   }
   return pts.join(" ");
 }
+function sortColsBottomToTopFlat(coords) {
+  // flat-top layout ⇒ x depends only on q, so q sorts columns left→right.
+  // within same column, larger r is lower on screen ⇒ sort r DESC (bottom→top).
+  return [...coords].sort((a, b) => a.q - b.q || b.r - a.r);
+}
 
 /* ===== cube helpers (orientation-agnostic) ===== */
 const DIR = [
@@ -58,6 +63,7 @@ function hexagonStarAxial(R = 2) {
 
   for (let s = 0; s < 6; s++) {
     const dirOut = DIR[s];
+    const dirIn = mul(dirOut, -1);
     const dirSide = DIR[(s + 1) % 6];
     const corner = mul(dirOut, R);
 
@@ -65,8 +71,7 @@ function hexagonStarAxial(R = 2) {
     for (let steps = 0; steps < R; steps++) {
       const hexSide = add(corner, mul(dirSide, steps + 1));
 
-      for (let row = 0; row <= steps; row++) {
-        const dirIn = mul(dirOut, -1);
+      for (let row = 1; row <= steps; row++) {
         const hexInside = add(hexSide, mul(dirIn, row));
         out.set(cubeKey(hexInside), hexInside);
       }
@@ -77,9 +82,19 @@ function hexagonStarAxial(R = 2) {
 
   const axial = Array.from(out.values()).map(toAxial);
   console.log("HexChessBoard has", axial.length, "cells.");
-  return axial;
+  // Expected total: 6R^2 + 6R + 1
+  const expected = 6 * R * R + 6 * R + 1;
+  if (axial.length !== expected) {
+    console.warn(`Expected ${expected} cells, got`, axial.length);
+  }
+
+  //axial.sort((a, b) => a.r - b.r || a.q - b.q);
+
+  return sortColsBottomToTopFlat(axial);
 }
 
+//const boardSize = this.props.G.boardSize;
+//const COORDS = hexagonStarAxial(this.props.G.boardSize);
 const COORDS = hexagonStarAxial(2);
 
 export default class HexChessBoard extends React.Component {
