@@ -38,6 +38,9 @@
   fill: #eeffe9;
 }
 #board polygon.selected:hover {
+  fill: #eeffe9;
+}
+#board polygon:hover {
   fill: #eeffff;
 }
 

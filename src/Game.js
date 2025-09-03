@@ -1,12 +1,23 @@
 import { INVALID_MOVE } from 'boardgame.io/dist/cjs/core.js';
+import { hexagonStarAxial } from "./hexGrid";
 
-// --------- piece glyphs ----------
-const WP = '♙', BP = '♟';
-const WK = '♔', BK = '♚';
-const WQ = '♕', BQ = '♛';
-const WB = '♗', BB = '♝';
-const WN = '♘', BN = '♞';
-const WR = '♖', BR = '♜';
+const GRID = hexagonStarAxial(2);
+
+// pieces
+const PIECE = {
+  WP: { color: 'W', glyph: '♙' },
+  BP: { color: 'B', glyph: '♟' },
+  WK: { color: 'W', glyph: '♔' },
+  BK: { color: 'B', glyph: '♚' },
+  WQ: { color: 'W', glyph: '♕' },
+  BQ: { color: 'B', glyph: '♛' },
+  WB: { color: 'W', glyph: '♗' },
+  BB: { color: 'B', glyph: '♝' },
+  WN: { color: 'W', glyph: '♘' },
+  BN: { color: 'B', glyph: '♞' },
+  WR: { color: 'W', glyph: '♖' },
+  BR: { color: 'B', glyph: '♜' },
+}
 
 // If a cell shows "9" on the board, its index here is 8, etc.
 const BLACK = {
@@ -34,20 +45,20 @@ export const HexChess = {
     const cells = Array(37).fill(null);
 
     // place black
-    BLACK.pawns.forEach((n) => (cells[n] = BP));
-    cells[BLACK.king] = BK;
-    cells[BLACK.knight] = BN;
-    cells[BLACK.queen] = BQ;
-    cells[BLACK.bishop] = BB;
-    cells[BLACK.rook] = BR;
+    BLACK.pawns.forEach((n) => (cells[n] = PIECE.BP));
+    cells[BLACK.king] = PIECE.BK;
+    cells[BLACK.knight] = PIECE.BN;
+    cells[BLACK.queen] = PIECE.BQ;
+    cells[BLACK.bishop] = PIECE.BB;
+    cells[BLACK.rook] = PIECE.BR;
 
     // place white
-    WHITE.pawns.forEach((n) => (cells[n] = WP));
-    cells[WHITE.rook] = WR;
-    cells[WHITE.queen] = WQ;
-    cells[WHITE.bishop] = WB;
-    cells[WHITE.knight] = WN;
-    cells[WHITE.king] = WK;
+    WHITE.pawns.forEach((n) => (cells[n] = PIECE.WP));
+    cells[WHITE.rook] = PIECE.WR;
+    cells[WHITE.queen] = PIECE.WQ;
+    cells[WHITE.bishop] = PIECE.WB;
+    cells[WHITE.knight] = PIECE.WN;
+    cells[WHITE.king] = PIECE.WK;
 
     return {
       cells,
@@ -61,46 +72,52 @@ export const HexChess = {
   },
 
   moves: {
-    clickCell: ({ G, events }, id) => {
-      if (G.selected == null) {
-        // nothing selected
+    clickCell: ({ G, events, playerID }, id) => {
+      // player with playerID equal to "0" is always white at the moment
+      const myColor = playerID === "0" ? 'W' : 'B';
 
+      // nothing is selected yet
+      if (G.selected == null) {
         // click on empty cell
         if (G.cells[id] == null) return INVALID_MOVE;
-
-        // click on enemy piece return Invalid
-
+        // click on enemy piece 
+        if (G.cells[id].color != myColor) return INVALID_MOVE;
+        // valid piece selected
         G.selected = id;
         return;
-      } else {
-        // piece is selected
-
+      }
+      // a valid piece is selected
+      else {
         // deselect
         if (G.selected === id) {
           G.selected = null;
           return;
         }
+
         // check all possible moves for the selected piece. 
         // return invalid if cell is not in the list of possible moves
 
+        // move the piece
         G.cells[id] = G.cells[G.selected];
         G.cells[G.selected] = null;
         G.selected = null;
         events.endTurn();
-        // 
       }
     },
   },
 
   /*   endIf: ({ G, ctx }) => {
+      // add logic to determine a winner and finish the game
     }, */
+
+
   ai: {
     enumerate: (G) => {
       let moves = [];
-      for (let i = 0; i < 9; i++) {
-        if (G.cells[i] === null) {
-          moves.push({ move: 'select', args: [i] });
-        }
+      for (let i = 0; i < GRID.length; i++) {
+        if (G.cells[i] != null)
+          // TODO: old TicTacToe logic: REWRITE so AI receives all possible moves
+          moves.push({ move: 'clickCell', args: [i] });
       }
       return moves;
     },
