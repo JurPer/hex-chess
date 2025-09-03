@@ -27,7 +27,7 @@ function sortColsBottomToTopFlat(coords) {
   return [...coords].sort((a, b) => a.q - b.q || b.r - a.r);
 }
 
-/* ===== cube helpers (orientation-agnostic) ===== */
+/* cube helpers (orientation-agnostic) */
 const DIR = [
   [0, 1, -1], // 0
   [-1, 1, 0], // 1
@@ -95,16 +95,10 @@ function hexagonStarAxial(R = 2) {
 
 export default class HexChessBoard extends React.Component {
   onClick = (id) => {
-    if (this.isActive(id) && this.props.moves?.clickCell) {
+    if (this.props.moves?.clickCell) {
       this.props.moves.clickCell(id);
     }
   };
-
-  isActive(id) {
-    if (!this.props.isActive) return false;
-    if (this.props.G?.cells?.[id] !== null) return false;
-    return true;
-  }
 
   render() {
     const COORDS = hexagonStarAxial(2);
@@ -143,14 +137,14 @@ export default class HexChessBoard extends React.Component {
           style={{ maxWidth: "100%", height: "auto", display: "block" }}
         >
           {centers.map(({ x, y }, id) => {
-            const active = this.isActive(id);
             const piece = this.props.G?.cells?.[id] ?? null;
+            const selected = this.props.G.selected === id;
 
             return (
               <g key={id} onClick={() => this.onClick(id)}>
                 <polygon
                   key={id}
-                  className={active ? "active" : ""}
+                  className={selected ? "selected" : ""}
                   points={hexPointsFlat(x, y, size)}
                 />
                 {/* label 1..19 (remove if not needed) */}
@@ -162,9 +156,10 @@ export default class HexChessBoard extends React.Component {
                 {piece ? (
                   <text
                     x={x}
-                    y={y + size * 0.25}
+                    y={y}
                     textAnchor="middle"
-                    fontSize={size * 0.9}
+                    dominantBaseline="middle"
+                    fontSize={size * 1.2}
                     pointerEvents="none"
                   >
                     {piece}

@@ -34,10 +34,10 @@
   stroke-width: 2;
 }
 
-#board polygon.active {
+#board polygon.selected {
   fill: #eeffe9;
 }
-#board polygon.active:hover {
+#board polygon.selected:hover {
   fill: #eeffff;
 }
 
