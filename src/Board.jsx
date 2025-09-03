@@ -21,21 +21,69 @@ function hexPointsFlat(cx, cy, size) {
   return pts.join(" ");
 }
 
-function hexagonAxial(R) {
+/* ===== cube helpers (orientation-agnostic) ===== */
+const DIR = [
+  [0, 1, -1], // 0
+  [-1, 1, 0], // 1
+  [-1, 0, 1], // 2
+  [0, -1, 1], // 3
+  [1, -1, 0], // 4
+  [1, 0, -1], // 5
+];
+const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const mul = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
+const toAxial = ([x, , z]) => ({ q: x, r: z });
+const cubeKey = (c) => `${c[0]},${c[1]},${c[2]}`;
+
+/* radius-2 hex (19 cells) in cube coords */
+function hexagonCube(R = 2) {
   const cells = [];
-  for (let q = -R; q <= R; q++) {
-    const rMin = Math.max(-R, -q - R);
-    const rMax = Math.min(R, -q + R);
-    for (let r = rMin; r <= rMax; r++) cells.push({ q, r });
+  for (let x = -R; x <= R; x++) {
+    const yMin = Math.max(-R, -x - R);
+    const yMax = Math.min(R, -x + R);
+    for (let y = yMin; y <= yMax; y++) {
+      const z = -x - y;
+      cells.push([x, y, z]);
+    }
   }
-  return cells; // 1 + 3R(R+1) -> 19 when R=2
+  return cells;
 }
 
-const RADIUS = 2;
-const COORDS = hexagonAxial(RADIUS); // 19 axial coords
+/**
+ * Build hex star (flat-top)
+ */
+function hexagonStarAxial(R = 2) {
+  const base = hexagonCube(R);
+  const out = new Map(base.map((c) => [cubeKey(c), c])); // dedupe
+
+  for (let s = 0; s < 6; s++) {
+    const dirOut = DIR[s];
+    const dirSide = DIR[(s + 1) % 6];
+    const corner = mul(dirOut, R);
+
+    // scale for larger star shaped boards
+    for (let steps = 0; steps < R; steps++) {
+      const hexSide = add(corner, mul(dirSide, steps + 1));
+
+      for (let row = 0; row <= steps; row++) {
+        const dirIn = mul(dirOut, -1);
+        const hexInside = add(hexSide, mul(dirIn, row));
+        out.set(cubeKey(hexInside), hexInside);
+      }
+
+      out.set(cubeKey(hexSide), hexSide);
+    }
+  }
+
+  const axial = Array.from(out.values()).map(toAxial);
+  console.log("HexChessBoard has", axial.length, "cells.");
+  return axial;
+}
+
+const COORDS = hexagonStarAxial(2);
 
 export default class HexChessBoard extends React.Component {
-  static defaultProps = { size: 35 }; // hex radius in px
+  static defaultProps = { size: 35 }; // hex size in px
 
   onClick = (id) => {
     if (this.isActive(id) && this.props.moves?.clickCell) {
@@ -96,7 +144,7 @@ export default class HexChessBoard extends React.Component {
                   points={hexPointsFlat(x, y, size)}
                 />
                 {/* label 1..19 (remove if not needed) */}
-                <text className="index" x={x} y={y + size * 0.55} textAnchor="middle">
+                <text className="index" x={x} y={y + size * 0.75} textAnchor="middle">
                   {id + 1}
                 </text>
 
@@ -104,7 +152,7 @@ export default class HexChessBoard extends React.Component {
                 {piece ? (
                   <text
                     x={x}
-                    y={y + 4}
+                    y={y + size * 0.25}
                     textAnchor="middle"
                     fontSize={size * 0.9}
                     pointerEvents="none"

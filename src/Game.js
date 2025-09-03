@@ -23,7 +23,7 @@ function IsDraw(cells) {
 export const HexChess = {
   name: "hex-chess",
 
-  setup: () => ({ cells: Array(19).fill(null) }),
+  setup: () => ({ cells: Array(37).fill(null) }),
 
   turn: {
     minMoves: 1,
