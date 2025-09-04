@@ -1,10 +1,11 @@
 import { INVALID_MOVE } from 'boardgame.io/dist/cjs/core.js';
-import { hexagonStarAxial } from "./hexGrid";
+import { hexagonStarAxial } from "./hexGrid.js";
 
+// board grid
 const GRID = hexagonStarAxial(2);
 
-// pieces
-const PIECE = {
+// piece definitions
+const PIECES = {
   WP: { color: 'W', glyph: '♙' },
   BP: { color: 'B', glyph: '♟' },
   WK: { color: 'W', glyph: '♔' },
@@ -17,7 +18,7 @@ const PIECE = {
   BN: { color: 'B', glyph: '♞' },
   WR: { color: 'W', glyph: '♖' },
   BR: { color: 'B', glyph: '♜' },
-}
+};
 
 // If a cell shows "9" on the board, its index here is 8, etc.
 const BLACK = {
@@ -45,20 +46,20 @@ export const HexChess = {
     const cells = Array(37).fill(null);
 
     // place black
-    BLACK.pawns.forEach((n) => (cells[n] = PIECE.BP));
-    cells[BLACK.king] = PIECE.BK;
-    cells[BLACK.knight] = PIECE.BN;
-    cells[BLACK.queen] = PIECE.BQ;
-    cells[BLACK.bishop] = PIECE.BB;
-    cells[BLACK.rook] = PIECE.BR;
+    BLACK.pawns.forEach((n) => (cells[n] = PIECES.BP));
+    cells[BLACK.king] = PIECES.BK;
+    cells[BLACK.knight] = PIECES.BN;
+    cells[BLACK.queen] = PIECES.BQ;
+    cells[BLACK.bishop] = PIECES.BB;
+    cells[BLACK.rook] = PIECES.BR;
 
     // place white
-    WHITE.pawns.forEach((n) => (cells[n] = PIECE.WP));
-    cells[WHITE.rook] = PIECE.WR;
-    cells[WHITE.queen] = PIECE.WQ;
-    cells[WHITE.bishop] = PIECE.WB;
-    cells[WHITE.knight] = PIECE.WN;
-    cells[WHITE.king] = PIECE.WK;
+    WHITE.pawns.forEach((n) => (cells[n] = PIECES.WP));
+    cells[WHITE.rook] = PIECES.WR;
+    cells[WHITE.queen] = PIECES.WQ;
+    cells[WHITE.bishop] = PIECES.WB;
+    cells[WHITE.knight] = PIECES.WN;
+    cells[WHITE.king] = PIECES.WK;
 
     return {
       cells,
@@ -123,4 +124,3 @@ export const HexChess = {
     },
   },
 };
-
