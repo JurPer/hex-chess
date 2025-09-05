@@ -50,9 +50,13 @@ export default class HexChessBoard extends React.Component {
           {centers.map(({ x, y }, id) => {
             const piece = this.props.G?.cells?.[id] ?? null;
             const selected = this.props.G.selected === id;
+            //const isLegalMove = this.props.G.legalMoves.includes(id);
+            const isLegalMove =
+              Array.isArray(this.props.G?.legalMoves) && this.props.G.legalMoves.includes(id);
 
             return (
               <g key={id} onClick={() => this.onClick(id)}>
+                {/* cell */}
                 <polygon
                   key={id}
                   className={selected ? "selected" : ""}
@@ -62,20 +66,33 @@ export default class HexChessBoard extends React.Component {
                 <text className="index" x={x} y={y + size * 0.75} textAnchor="middle">
                   {id + 1}
                 </text>
-
-                {/* piece */}
-                {piece ? (
-                  <text
-                    x={x}
-                    y={y}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize={size * 1.2}
-                    pointerEvents="none"
-                  >
-                    {piece.glyph}
-                  </text>
-                ) : null}
+                {
+                  /* small circle at the center of a legal target cell */
+                  isLegalMove ? (
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={size * 0.25}
+                      fill={"#9aa0a6"}
+                      pointerEvents="none"
+                    ></circle>
+                  ) : null
+                }
+                {
+                  /* piece */
+                  piece ? (
+                    <text
+                      x={x}
+                      y={y}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize={size * 1.2}
+                      pointerEvents="none"
+                    >
+                      {piece.glyph}
+                    </text>
+                  ) : null
+                }
               </g>
             );
           })}
