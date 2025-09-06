@@ -1,16 +1,73 @@
 import React from "react";
 import "./board.css";
+import { PIECES } from "./Game";
 
 import { axialToPixelFlat, hexPointsFlat, hexagonStarAxial } from "./hexGrid";
 
 const GRID = hexagonStarAxial(2);
 
 export default class HexChessBoard extends React.Component {
-  onClick = (id) => {
-    if (this.props.moves?.clickCell) {
-      this.props.moves.clickCell(id);
+  /* ****** Helper ****** */
+  isSetupPhase() {
+    return this.props.ctx?.phase === "setup";
+  }
+  currentColor() {
+    return this.props.ctx?.currentPlayer === "0" ? "W" : "B";
+  }
+  isBackRankCell(id) {
+    const back = this.currentColor() === "W" ? [3, 10, 16, 21, 27] : [9, 15, 20, 26, 33];
+    return back.includes(id);
+  }
+  state = { setupTarget: null };
+  componentDidUpdate(prevProps) {
+    if (prevProps.G?.setupPool !== this.props.G?.setupPool && this.state.setupTarget != null) {
+      this.setState({ setupTarget: null });
     }
+  }
+
+  /**
+   * Event handler for a click on a cell
+   * @param {*} id
+   */
+  onClick = (id) => {
+    if (this.isSetupPhase()) {
+      const isEmpty = this.props.G.cells[id] == null;
+      if (isEmpty && this.isBackRankCell(id)) {
+        this.setState({ setupTarget: id }); // pick target cell
+      }
+      return;
+    }
+    // normal play:
+    this.props.moves.clickCell(id);
   };
+  renderSetupPanel() {
+    if (!this.isSetupPhase()) return null;
+    const color = this.currentColor();
+    const bag = this.props.G.setupPool[color]; // ['WR','WN','WB','WQ','WK']
+    const { setupTarget } = this.state;
+
+    return (
+      <div className="setup-panel">
+        <div>Setup-pool: {color === "W" ? "White" : "Black"} </div>
+        <div className="setup-pieces">
+          {bag.map((code) => (
+            <button
+              key={code}
+              disabled={setupTarget == null}
+              onClick={() => this.props.moves.placePiece(setupTarget, code)}
+              title={code}
+              className="setup-piece-btn"
+            >
+              {PIECES[code].glyph}
+            </button>
+          ))}
+        </div>
+        <div className="setup-hint">
+          {setupTarget == null ? "Click an empty back-rank hex" : `Target: ${setupTarget + 1}`}
+        </div>
+      </div>
+    );
+  }
 
   render() {
     const size = 35; // hex size in px
@@ -48,6 +105,21 @@ export default class HexChessBoard extends React.Component {
           style={{ maxWidth: "100%", height: "auto", display: "block" }}
         >
           {centers.map(({ x, y }, id) => {
+            // setup
+            const setupTarget = this.state.setupTarget;
+            const canPlaceHere =
+              this.isSetupPhase() && this.isBackRankCell(id) && this.props.G.cells[id] == null;
+
+            <polygon
+              className={[
+                canPlaceHere && "setup-target",
+                setupTarget === id && "setup-selected",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              /* ...other props... */
+            />;
+
             const piece = this.props.G?.cells?.[id] ?? null;
             const selected = this.props.G.selected === id;
             //const isLegalMove = this.props.G.legalMoves.includes(id);
@@ -97,7 +169,7 @@ export default class HexChessBoard extends React.Component {
             );
           })}
         </svg>
-
+        {this.renderSetupPanel()}
         {winner}
       </div>
     );

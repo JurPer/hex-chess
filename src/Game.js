@@ -72,9 +72,9 @@ function applyPlay(G, from, to) {
   G.selected = null;
   G.legalMoves = [];
   // check pawn promotion if applicable; auto-queen for now
-  if (movedPiece.glyph === PIECES.WP.glyph && WHITE_PROMOTION_INDICES.has(to)) {
+  if (movedPiece.glyph === PIECES.WP.glyph && BLACK_BACK_RANK.has(to)) {
     G.cells[to] = PIECES.WQ;
-  } else if (movedPiece.glyph === PIECES.BP.glyph && BLACK_PROMOTION_INDICES.has(to)) {
+  } else if (movedPiece.glyph === PIECES.BP.glyph && WHITE_BACK_RANK.has(to)) {
     G.cells[to] = PIECES.BQ;
   }
 }
@@ -177,7 +177,7 @@ function isKingAttacked(cells, kingColor) {
 
 
 /* ****** Piece definitions ****** */
-const PIECES = {
+export const PIECES = {
   WP: { color: 'W', glyph: '♙' },
   BP: { color: 'B', glyph: '♟' },
   WK: { color: 'W', glyph: '♔' },
@@ -191,29 +191,15 @@ const PIECES = {
   WR: { color: 'W', glyph: '♖' },
   BR: { color: 'B', glyph: '♜' },
 };
-// If a cell shows "9" on the board, its index here is 8, etc.
+// (0-based indices): If a cell shows "9" on the board, its index here is 8, etc.
+const WHITE_BACK_RANK = new Set([3, 10, 16, 21, 27]);
+const BLACK_BACK_RANK = new Set([9, 15, 20, 26, 33]);
 const WHITE_PAWN_INIT = new Set([4, 11, 17, 22, 28]);
 const BLACK_PAWN_INIT = new Set([8, 14, 19, 25, 32]);
 
-const WHITE = {
-  pawns: WHITE_PAWN_INIT,
-  rook: 3,
-  queen: 10,
-  bishop: 16,
-  knight: 21,
-  king: 27,
-};
-const BLACK = {
-  pawns: BLACK_PAWN_INIT,
-  king: 9,
-  knight: 15,
-  queen: 20,
-  bishop: 26,
-  rook: 33,
-};
-// Promotion zones (board labels → 0-based indices)
-const WHITE_PROMOTION_INDICES = new Set([9, 15, 20, 26, 33]);
-const BLACK_PROMOTION_INDICES = new Set([3, 10, 16, 21, 27]);
+// Setup piece pools (we store codes; convert to PIECES[...] on placement)
+const SETUP_POOL_W = ['WR', 'WN', 'WB', 'WQ', 'WK'];
+const SETUP_POOL_B = ['BR', 'BN', 'BB', 'BQ', 'BK'];
 
 
 /* ****** Move logic ****** */
@@ -354,26 +340,17 @@ export const HexChess = {
   setup: () => {
     const cells = Array(37).fill(null);
 
-    // place white
-    WHITE.pawns.forEach((n) => (cells[n] = PIECES.WP));
-    cells[WHITE.rook] = PIECES.WR;
-    cells[WHITE.queen] = PIECES.WQ;
-    cells[WHITE.bishop] = PIECES.WB;
-    cells[WHITE.knight] = PIECES.WN;
-    cells[WHITE.king] = PIECES.WK;
+    // Pawn init
+    WHITE_PAWN_INIT.forEach((n) => (cells[n] = PIECES.WP));
+    BLACK_PAWN_INIT.forEach((n) => (cells[n] = PIECES.BP));
 
-    // place black
-    BLACK.pawns.forEach((n) => (cells[n] = PIECES.BP));
-    cells[BLACK.king] = PIECES.BK;
-    cells[BLACK.knight] = PIECES.BN;
-    cells[BLACK.queen] = PIECES.BQ;
-    cells[BLACK.bishop] = PIECES.BB;
-    cells[BLACK.rook] = PIECES.BR;
-
+    const setupPool = { W: [...SETUP_POOL_W], B: [...SETUP_POOL_B] }
     return {
       cells,
       selected: null,
       legalMoves: [],
+      phase: "setup",
+      setupPool,
     };
   },
 
@@ -382,77 +359,108 @@ export const HexChess = {
     //maxMoves: 1,
   },
 
-  moves: {
-    clickCell: ({ G, ctx, events }, id) => {
-      // player with playerID "0" is always white at the moment
-      const myColor = colorToMove(ctx);
+  phases: {
+    setup: {
+      moves: {
+        // Setup move: place one non-pawn piece on your back rank
+        placePiece: ({ G, ctx }, targetIndex, pieceCode) => {
+          const color = ctx.currentPlayer === '0' ? 'W' : 'B';
+          const backRank = color === 'W' ? WHITE_BACK_RANK : BLACK_BACK_RANK;
 
-      // nothing is selected yet
-      if (G.selected === null) {
-        // click on empty cell
-        if (G.cells[id] === null) return INVALID_MOVE;
-        // click on enemy piece 
-        if (G.cells[id].color != myColor) return INVALID_MOVE;
+          // Validate
+          if (!backRank.has(targetIndex)) return INVALID_MOVE;
+          if (G.cells[targetIndex] != null) return INVALID_MOVE;
+          if (!G.setupPool[color].includes(pieceCode)) return INVALID_MOVE;
+          if (!PIECES[pieceCode] || PIECES[pieceCode].color !== color) return INVALID_MOVE;
 
-        // valid piece selected
-        G.selected = id;
-        G.legalMoves = pieceLegalMoves(G, id);
+          // Place
+          G.cells[targetIndex] = PIECES[pieceCode];
+          // Remove from bag
+          const idx = G.setupPool[color].indexOf(pieceCode);
+          G.setupPool[color].splice(idx, 1);
+        },
+      },
+      endIf: ({ G }) => {
+        return !!G.setupPool && G.setupPool.W?.length === 0 && G.setupPool.B?.length === 0;
+      },
+      turn: { moveLimit: 1 },
+      next: "play",
+      start: true,
+    },
+    play: {
+      moves: {
+        clickCell: ({ G, ctx, events }, id) => {
+          // player with playerID "0" is always white at the moment
+          const myColor = colorToMove(ctx);
 
-        return;
-      }
-      // a valid piece is selected
-      else {
-        // deselect
-        if (G.selected === id) {
-          G.selected = null;
-          G.legalMoves = [];
-          return;
-        }
+          // nothing is selected yet
+          if (G.selected === null) {
+            // click on empty cell
+            if (G.cells[id] === null) return INVALID_MOVE;
+            // click on enemy piece 
+            if (G.cells[id].color != myColor) return INVALID_MOVE;
 
-        // target cell is not in the list of possible moves
-        if (!G.legalMoves.includes(id)) {
-          // reselect another of your own pieces
-          if (G.cells[id].color === myColor) {
+            // valid piece selected
             G.selected = id;
             G.legalMoves = pieceLegalMoves(G, id);
+
             return;
-          };
-          return INVALID_MOVE;
-        }
+          }
+          // a valid piece is selected
+          else {
+            // deselect
+            if (G.selected === id) {
+              G.selected = null;
+              G.legalMoves = [];
+              return;
+            }
 
-        applyPlay(G, G.selected, id);
-        events.endTurn();
-      }
-    },
+            // target cell is not in the list of possible moves
+            if (!G.legalMoves.includes(id)) {
+              // reselect another of your own pieces
+              if (G.cells[id].color === myColor) {
+                G.selected = id;
+                G.legalMoves = pieceLegalMoves(G, id);
+                return;
+              };
+              return INVALID_MOVE;
+            }
 
-    aiPlay: ({ G, ctx, events }, from, to) => {
-      if (!isLegalPlay(G, ctx, from, to)) return INVALID_MOVE;
-      applyPlay(G, from, to);
-      events.endTurn();
+            applyPlay(G, G.selected, id);
+            events.endTurn();
+          }
+        },
+
+        aiPlay: ({ G, ctx, events }, from, to) => {
+          if (!isLegalPlay(G, ctx, from, to)) return INVALID_MOVE;
+          applyPlay(G, from, to);
+          events.endTurn();
+        },
+      },
+      endIf: ({ G, ctx }) => {
+        // 1) King captured?
+        const whiteKingAlive = G.cells.some(c => c && c.glyph === PIECES.WK.glyph);
+        const blackKingAlive = G.cells.some(c => c && c.glyph === PIECES.BK.glyph);
+
+        if (!whiteKingAlive && !blackKingAlive) return { draw: true };
+        if (!whiteKingAlive) return { winner: '1' }; // Black wins
+        if (!blackKingAlive) return { winner: '0' }; // White wins
+
+        // 2) No legal moves for the side to move? -> draw
+        // I think this is impossible with the current rule set, but we keep it in, just in case
+        if (!playerHasAnyMove(G, colorToMove(ctx))) return { draw: true };
+
+        // Otherwise, game continues
+        return;
+      },
     },
   },
-
-  endIf: ({ G, ctx }) => {
-    // 1) King captured?
-    const whiteKingAlive = G.cells.some(c => c && c.glyph === PIECES.WK.glyph);
-    const blackKingAlive = G.cells.some(c => c && c.glyph === PIECES.BK.glyph);
-
-    if (!whiteKingAlive && !blackKingAlive) return { draw: true };
-    if (!whiteKingAlive) return { winner: '1' }; // Black wins
-    if (!blackKingAlive) return { winner: '0' }; // White wins
-
-    // 2) No legal moves for the side to move? -> draw
-    // I think this is impossible with the current rule set, but we keep it in, just in case
-    if (!playerHasAnyMove(G, colorToMove(ctx))) return { draw: true };
-
-    // Otherwise, game continues
-    return;
-  },
-
 
   // no logging here because it kills ai performance
   ai: {
     enumerate: (G, ctx) => {
+      // TODO do Setup here
+
       const color = colorToMove(ctx);
 
       // Generate all legal atomic moves for the side to move

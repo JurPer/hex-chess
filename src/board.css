@@ -49,6 +49,30 @@
   fill: #555;
 }
 
+.setup-target {
+  stroke: #0ea5e9;
+  stroke-width: 3px;
+} /* cyan outline */
+.setup-selected {
+  stroke: #22c55e;
+  stroke-width: 3px;
+} /* green when chosen */
+.setup-panel {
+  margin-top: 8px;
+  display: grid;
+  gap: 8px;
+}
+.setup-pieces {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.setup-piece-btn {
+  font-size: 20px;
+  line-height: 1;
+  padding: 6px 10px;
+}
+
 #winner {
   margin-top: 5px;
   width: 450;
