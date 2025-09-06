@@ -4,7 +4,6 @@ import { hexagonStarAxial } from "./hexGrid.js";
 // Board Grid
 export const GRID = hexagonStarAxial(2);
 
-
 /* ****** Helper variables and functions ****** */
 const colorToMove = (ctx) => (ctx.currentPlayer === '0' ? 'W' : 'B');
 
@@ -69,8 +68,7 @@ function applyPlay(G, from, to) {
   const movedPiece = G.cells[from];
   G.cells[to] = movedPiece;
   G.cells[from] = null;
-  G.selected = null;
-  G.legalMoves = [];
+
   // check pawn promotion if applicable; auto-queen for now
   if (movedPiece.glyph === PIECES.WP.glyph && BLACK_BACK_RANK.has(to)) {
     G.cells[to] = PIECES.WQ;
@@ -78,7 +76,6 @@ function applyPlay(G, from, to) {
     G.cells[to] = PIECES.BQ;
   }
 }
-
 
 /* ****** AI Helper ****** */
 // All legal moves for a given color -> [{from, to}]
@@ -101,7 +98,7 @@ function nextStateCells(cells, from, to) {
 }
 // return index of king for color
 function kingIndex(cells, color) {
-  const glyph = color === 'W' ? PIECES.WK.glyph : PIECES.BK.glyph;;
+  const glyph = color === 'W' ? PIECES.WK.glyph : PIECES.BK.glyph;
   for (let i = 0; i < cells.length; i++) {
     const piece = cells[i];
     if (piece && piece.glyph === glyph) return i;
@@ -110,13 +107,11 @@ function kingIndex(cells, color) {
 }
 // Is the king of color attacked in this cells array?
 function isKingAttacked(cells, kingColor) {
-  // locate king
   let kingId = kingIndex(cells, kingColor);
-  if (kingId < 0) return true; // no king found -> considered attacked
-
+  if (kingId < 0) return true;
   const oppColor = kingColor === 'W' ? 'B' : 'W';
 
-  // 1) Pawn attacks: (pawn capture diagonally and are symmetrical)
+  // 1) Pawn attacks (symmetric from king square)
   for (const direction of PAWN_CAPTURE_DIRS[kingColor]) {
     const source = stepIdxByDir(kingId, direction, 1);
     const piece = source != null ? cells[source] : null;
@@ -132,8 +127,6 @@ function isKingAttacked(cells, kingColor) {
     }
   }
   // 3) Sliding attacks: rook/bishop/queen
-  //    Rook on vertical dirs: 2,5. Bishop on non-vertical: 0,1,3,4.
-  //    Queen on all dirs. We ray out from the king until a blocker.
   const rookDirs = [2, 5];
   const bishopDirs = [0, 1, 3, 4];
 
@@ -142,28 +135,26 @@ function isKingAttacked(cells, kingColor) {
       let current = kingId;
       while (true) {
         const next = stepIdxByDir(current, direction, 1);
-        if (next == null) break; // out of bounds
+        if (next == null) break;
         const piece = cells[next];
-        if (!piece) { current = next; continue; } // empty -> keep going
-        if (piece.color === oppColor && isAttacker(piece.glyph)) return true; // first piece is attacker
-        break; // own piece or blocking enemy that's not the right type
+        if (!piece) { current = next; continue; }
+        if (piece.color === oppColor && isAttacker(piece.glyph)) return true;
+        break;
       }
     }
     return false;
   };
 
-  // Rook or Queen
   if (isSlideAttacked(rookDirs, glyph => glyph === PIECES.WR.glyph || glyph === PIECES.BR.glyph
     || glyph === PIECES.WQ.glyph || glyph === PIECES.BQ.glyph)) {
     return true;
   }
-  // Bishop or Queen
   if (isSlideAttacked(bishopDirs, glyph => glyph === PIECES.WB.glyph || glyph === PIECES.BB.glyph
     || glyph === PIECES.WQ.glyph || glyph === PIECES.BQ.glyph)) {
     return true;
   }
 
-  // 4) Opposing king adjacent (rare but possible in your rules)
+  // 4) Adjacent opposing king
   for (let direction = 0; direction < 6; direction++) {
     const source = stepIdxByDir(kingId, direction, 1);
     const piece = source != null ? cells[source] : null;
@@ -171,10 +162,8 @@ function isKingAttacked(cells, kingColor) {
       return true;
     }
   }
-
   return false;
 }
-
 
 /* ****** Piece definitions ****** */
 export const PIECES = {
@@ -191,7 +180,7 @@ export const PIECES = {
   WR: { color: 'W', glyph: '♖' },
   BR: { color: 'B', glyph: '♜' },
 };
-// (0-based indices): If a cell shows "9" on the board, its index here is 8, etc.
+// (0-based indices)
 const WHITE_BACK_RANK = new Set([3, 10, 16, 21, 27]);
 const BLACK_BACK_RANK = new Set([9, 15, 20, 26, 33]);
 const WHITE_PAWN_INIT = new Set([4, 11, 17, 22, 28]);
@@ -201,34 +190,27 @@ const BLACK_PAWN_INIT = new Set([8, 14, 19, 25, 32]);
 const SETUP_POOL_W = ['WR', 'WN', 'WB', 'WQ', 'WK'];
 const SETUP_POOL_B = ['BR', 'BN', 'BB', 'BQ', 'BK'];
 
-
-/* ****** Move logic ****** */
-const PAWN_CAPTURE_DIRS = { W: [1, 3], B: [0, 4] };
-
-// returns an array of all legal moves (ids) for the piece id
-function pieceLegalMoves(G, id) {
-  const piece = G.cells[id];
+/* ****** Move generators ****** */
+// Export a cells-based dispatcher so Board can use it without touching G.
+export function legalMovesFromCells(cells, id) {
+  const piece = cells[id];
   if (!piece) return [];
   const glyph = piece.glyph;
 
-  // save all legal moves for the selected piece
-  let legalMoves = [];
-  if (glyph === PIECES.WP.glyph || glyph === PIECES.BP.glyph) {
-    legalMoves = pawnMoves(G.cells, id);
-  } else if (glyph === PIECES.WK.glyph || glyph === PIECES.BK.glyph) {
-    legalMoves = kingMoves(G.cells, id);
-  } else if (glyph === PIECES.WN.glyph || glyph === PIECES.BN.glyph) {
-    legalMoves = knightMoves(G.cells, id);
-  } else if (glyph === PIECES.WR.glyph || glyph === PIECES.BR.glyph) {
-    legalMoves = rookMoves(G.cells, id);
-  } else if (glyph === PIECES.WB.glyph || glyph === PIECES.BB.glyph) {
-    legalMoves = bishopMoves(G.cells, id);
-  } else if (glyph === PIECES.WQ.glyph || glyph === PIECES.BQ.glyph) {
-    legalMoves = queenMoves(G.cells, id);
-  }
-
-  return legalMoves;
+  if (glyph === PIECES.WP.glyph || glyph === PIECES.BP.glyph) return pawnMoves(cells, id);
+  if (glyph === PIECES.WK.glyph || glyph === PIECES.BK.glyph) return kingMoves(cells, id);
+  if (glyph === PIECES.WN.glyph || glyph === PIECES.BN.glyph) return knightMoves(cells, id);
+  if (glyph === PIECES.WR.glyph || glyph === PIECES.BR.glyph) return rookMoves(cells, id);
+  if (glyph === PIECES.WB.glyph || glyph === PIECES.BB.glyph) return bishopMoves(cells, id);
+  if (glyph === PIECES.WQ.glyph || glyph === PIECES.BQ.glyph) return queenMoves(cells, id);
+  return [];
 }
+// Backward-compatible wrapper used by server-side validation / AI
+function pieceLegalMoves(G, id) {
+  return legalMovesFromCells(G.cells, id);
+}
+
+const PAWN_CAPTURE_DIRS = { W: [1, 3], B: [0, 4] };
 
 // Pawn: One or two steps forward, can capture diagonally; return legal moves
 function pawnMoves(cells, id) {
@@ -242,59 +224,53 @@ function pawnMoves(cells, id) {
   let legalMoves = [];
 
   // Single step forward (must be empty)
-  if (oneStep != null && cells[oneStep] === null)
-    legalMoves.push(oneStep);
+  if (oneStep != null && cells[oneStep] === null) legalMoves.push(oneStep);
 
   // Double step from starting rank (both squares must be empty)
-  const onStart = piece.color === 'W'
-    ? WHITE_PAWN_INIT.has(id)
-    : BLACK_PAWN_INIT.has(id);
+  const onStart = piece.color === 'W' ? WHITE_PAWN_INIT.has(id) : BLACK_PAWN_INIT.has(id);
   if (onStart && oneStep != null && cells[oneStep] === null
     && twoSteps != null && cells[twoSteps] === null) {
     legalMoves.push(twoSteps);
   }
 
-  for (const direction of (PAWN_CAPTURE_DIRS[piece.color])) {
+  // Captures
+  for (const direction of PAWN_CAPTURE_DIRS[piece.color]) {
     const target = stepIdxByDir(id, direction, 1);
     if (target != null) {
       const occupied = cells[target];
       if (occupied && occupied.color !== piece.color) legalMoves.push(target);
     }
   }
-
   return legalMoves;
 }
 
-// King: one step in any orthogonal direction (can capture enemy): return legal moves
+// King: one step in any orthogonal direction
 function kingMoves(cells, id) {
   const piece = cells[id];
   if (!piece) return [];
-
   const legalMoves = [];
   for (let dirIdx = 0; dirIdx < 6; dirIdx++) {
     const target = stepIdxByDir(id, dirIdx, 1);
-    if (target == null) continue;  // not on the board
+    if (target == null) continue;
     const occupied = cells[target];
     if (occupied == null || occupied.color !== piece.color) legalMoves.push(target);
   }
   return legalMoves;
 }
 
-// Knight: 2 steps along any orthogonal direction, then 1 step in adjacent dir (left or right).
-// Ignores blockers; can capture enemy on landing.
+// Knight: 2 in a dir, then 1 in adjacent dir (jump)
 function knightMoves(cells, id) {
   const piece = cells[id];
   if (!piece) return [];
-
   const { q, r } = GRID[id];
   const legalMoves = new Set();
 
   for (let direction = 0; direction < 6; direction++) {
     const [dq, dr] = AXIAL_DIRS[direction];
-    const [lq, lr] = AXIAL_DIRS[(direction + 5) % 6]; // turn left
-    const [rq, rr] = AXIAL_DIRS[(direction + 1) % 6]; // turn right
-    const left = idxOf(q + 2 * dq + lq, r + 2 * dr + lr); // turn left 60°
-    const right = idxOf(q + 2 * dq + rq, r + 2 * dr + rr); // turn right 60°
+    const [lq, lr] = AXIAL_DIRS[(direction + 5) % 6];
+    const [rq, rr] = AXIAL_DIRS[(direction + 1) % 6];
+    const left = idxOf(q + 2 * dq + lq, r + 2 * dr + lr);
+    const right = idxOf(q + 2 * dq + rq, r + 2 * dr + rr);
 
     for (const target of [left, right]) {
       if (target != null) {
@@ -306,30 +282,27 @@ function knightMoves(cells, id) {
   return [...legalMoves];
 }
 
-// Rook: slides in vertical direction (can capture enemy): return legal moves
+// Rook: vertical slides
 function rookMoves(cells, id) {
   const piece = cells[id];
   if (!piece) return [];
-  const directions = [2, 5]; // vertical only (up, down)
-
+  const directions = [2, 5];
   return directions.flatMap(d => slide(cells, id, d));
 }
 
-// Bishop: slides in non-vertical directions (can capture enemy): return legal moves
+// Bishop: non-vertical slides
 function bishopMoves(cells, id) {
   const piece = cells[id];
   if (!piece) return [];
-  const directions = [0, 1, 3, 4]; // non-vertical
-
+  const directions = [0, 1, 3, 4];
   return directions.flatMap(d => slide(cells, id, d));
 }
 
-// Queen: slides in any orthogonal direction (can capture enemy): return legal moves
+// Queen: any orthogonal slide
 function queenMoves(cells, id) {
   const piece = cells[id];
   if (!piece) return [];
-  const directions = [0, 1, 2, 3, 4, 5]; // all orthogonal directions
-
+  const directions = [0, 1, 2, 3, 4, 5];
   return directions.flatMap(d => slide(cells, id, d));
 }
 
@@ -340,27 +313,22 @@ export const HexChess = {
   setup: () => {
     const cells = Array(37).fill(null);
 
-    // Pawn init
+    // Pawns only in setup
     WHITE_PAWN_INIT.forEach((n) => (cells[n] = PIECES.WP));
     BLACK_PAWN_INIT.forEach((n) => (cells[n] = PIECES.BP));
 
-    const setupPool = { W: [...SETUP_POOL_W], B: [...SETUP_POOL_B] }
+    const setupPool = { W: [...SETUP_POOL_W], B: [...SETUP_POOL_B] };
+
     return {
       cells,
-      selected: null,
-      legalMoves: [],
       phase: "setup",
       setupPool,
     };
   },
 
-  turn: {
-    minMoves: 1,
-    //maxMoves: 1,
-  },
-
   phases: {
     setup: {
+      start: true,
       moves: {
         // Setup move: place one non-pawn piece on your back rank
         placePiece: ({ G, ctx }, targetIndex, pieceCode) => {
@@ -375,68 +343,25 @@ export const HexChess = {
 
           // Place
           G.cells[targetIndex] = PIECES[pieceCode];
-          // Remove from bag
+          // Remove from pool
           const idx = G.setupPool[color].indexOf(pieceCode);
           G.setupPool[color].splice(idx, 1);
         },
       },
-      endIf: ({ G }) => {
-        return !!G.setupPool && G.setupPool.W?.length === 0 && G.setupPool.B?.length === 0;
-      },
-      turn: { moveLimit: 1 },
+      turn: { moveLimit: 1 }, // alternate automatically
+      endIf: ({ G }) => !!G.setupPool && G.setupPool.W?.length === 0 && G.setupPool.B?.length === 0,
       next: "play",
-      start: true,
     },
+
     play: {
       moves: {
-        clickCell: ({ G, ctx, events }, id) => {
-          // player with playerID "0" is always white at the moment
-          const myColor = colorToMove(ctx);
-
-          // nothing is selected yet
-          if (G.selected === null) {
-            // click on empty cell
-            if (G.cells[id] === null) return INVALID_MOVE;
-            // click on enemy piece 
-            if (G.cells[id].color != myColor) return INVALID_MOVE;
-
-            // valid piece selected
-            G.selected = id;
-            G.legalMoves = pieceLegalMoves(G, id);
-
-            return;
-          }
-          // a valid piece is selected
-          else {
-            // deselect
-            if (G.selected === id) {
-              G.selected = null;
-              G.legalMoves = [];
-              return;
-            }
-
-            // target cell is not in the list of possible moves
-            if (!G.legalMoves.includes(id)) {
-              // reselect another of your own pieces
-              if (G.cells[id].color === myColor) {
-                G.selected = id;
-                G.legalMoves = pieceLegalMoves(G, id);
-                return;
-              };
-              return INVALID_MOVE;
-            }
-
-            applyPlay(G, G.selected, id);
-            events.endTurn();
-          }
-        },
-
-        aiPlay: ({ G, ctx, events }, from, to) => {
+        // Atomic human/AI move
+        play: ({ G, ctx }, from, to) => {
           if (!isLegalPlay(G, ctx, from, to)) return INVALID_MOVE;
           applyPlay(G, from, to);
-          events.endTurn();
         },
       },
+      turn: { moveLimit: 1 }, // alternate automatically
       endIf: ({ G, ctx }) => {
         // 1) King captured?
         const whiteKingAlive = G.cells.some(c => c && c.glyph === PIECES.WK.glyph);
@@ -446,39 +371,26 @@ export const HexChess = {
         if (!whiteKingAlive) return { winner: '1' }; // Black wins
         if (!blackKingAlive) return { winner: '0' }; // White wins
 
-        // 2) No legal moves for the side to move? -> draw
-        // I think this is impossible with the current rule set, but we keep it in, just in case
+        // 2) No legal moves for the side to move? -> draw (kept for future pieces)
         if (!playerHasAnyMove(G, colorToMove(ctx))) return { draw: true };
 
-        // Otherwise, game continues
         return;
       },
     },
   },
 
-  // no logging here because it kills ai performance
   ai: {
     enumerate: (G, ctx) => {
-      // TODO do Setup here
-
       const color = colorToMove(ctx);
-
-      // Generate all legal atomic moves for the side to move
       const allMoves = generateAllMoves(G, color);
-
-      // King-safety pruning: drop moves that allow immediate king capture
       const safeMoves = allMoves.filter(({ from, to }) => {
         const nextCells = nextStateCells(G.cells, from, to);
         return !isKingAttacked(nextCells, color);
       });
-
       // if none safe, play anything
       const chosenMoves = safeMoves.length ? safeMoves : allMoves;
-
       // sort by captures first
       chosenMoves.sort((a, b) => (G.cells[b.to] ? 1 : 0) - (G.cells[a.to] ? 1 : 0));
-
-      // Return atomic moves for MCTS
       return chosenMoves.map(({ from, to }) => ({ move: 'aiPlay', args: [from, to] }));
     },
   },
