@@ -4,6 +4,7 @@ import { hexagonStarAxial } from "./hexGrid.js";
 // Board Grid
 export const GRID = hexagonStarAxial(2);
 
+
 /* ****** Helper variables and functions ****** */
 const colorToMove = (ctx) => (ctx.currentPlayer === '0' ? 'W' : 'B');
 
@@ -65,11 +66,19 @@ function isLegalPlay(G, ctx, from, to) {
 }
 // Apply a (validated) move to state
 function applyPlay(G, from, to) {
-  G.cells[to] = G.cells[from];
+  const movedPiece = G.cells[from];
+  G.cells[to] = movedPiece;
   G.cells[from] = null;
   G.selected = null;
   G.legalMoves = [];
+  // check pawn promotion if applicable; auto-queen for now
+  if (movedPiece.glyph === PIECES.WP.glyph && WHITE_PROMOTION_INDICES.has(to)) {
+    G.cells[to] = PIECES.WQ;
+  } else if (movedPiece.glyph === PIECES.BP.glyph && BLACK_PROMOTION_INDICES.has(to)) {
+    G.cells[to] = PIECES.BQ;
+  }
 }
+
 
 /* ****** AI Helper ****** */
 // All legal moves for a given color -> [{from, to}]
@@ -99,7 +108,6 @@ function kingIndex(cells, color) {
   }
   return -1; // captured
 }
-
 // Is the king of color attacked in this cells array?
 function isKingAttacked(cells, kingColor) {
   // locate king
@@ -168,7 +176,6 @@ function isKingAttacked(cells, kingColor) {
 }
 
 
-
 /* ****** Piece definitions ****** */
 const PIECES = {
   WP: { color: 'W', glyph: '♙' },
@@ -184,10 +191,10 @@ const PIECES = {
   WR: { color: 'W', glyph: '♖' },
   BR: { color: 'B', glyph: '♜' },
 };
-
 // If a cell shows "9" on the board, its index here is 8, etc.
 const WHITE_PAWN_INIT = new Set([4, 11, 17, 22, 28]);
 const BLACK_PAWN_INIT = new Set([8, 14, 19, 25, 32]);
+
 const WHITE = {
   pawns: WHITE_PAWN_INIT,
   rook: 3,
@@ -204,9 +211,12 @@ const BLACK = {
   bishop: 26,
   rook: 33,
 };
+// Promotion zones (board labels → 0-based indices)
+const WHITE_PROMOTION_INDICES = new Set([9, 15, 20, 26, 33]);
+const BLACK_PROMOTION_INDICES = new Set([3, 10, 16, 21, 27]);
+
 
 /* ****** Move logic ****** */
-
 const PAWN_CAPTURE_DIRS = { W: [1, 3], B: [0, 4] };
 
 // returns an array of all legal moves (ids) for the piece id
@@ -230,8 +240,6 @@ function pieceLegalMoves(G, id) {
   } else if (glyph === PIECES.WQ.glyph || glyph === PIECES.BQ.glyph) {
     legalMoves = queenMoves(G.cells, id);
   }
-
-  // no logging here because it kills ai performance
 
   return legalMoves;
 }
