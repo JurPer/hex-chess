@@ -79,6 +79,8 @@ export default class HexChessBoard extends React.Component {
     const setupPool = this.props.G.setupPool[color]; // ['WR','WN','WB','WQ','WK']
     const { setupTarget } = this.state;
 
+    const canBulkPlace = setupPool.length > 0; // enable only if pieces remain
+
     return (
       <div className="setup-panel">
         <div className="setup-hint">Setup: {color === "W" ? "White" : "Black"}</div>
@@ -94,6 +96,22 @@ export default class HexChessBoard extends React.Component {
               {PIECES[code].glyph}
             </button>
           ))}
+        </div>
+        <div className="setup-actions" style={{ display: "flex", gap: 8, marginTop: 8 }}>
+          <button
+            disabled={!canBulkPlace}
+            onClick={() => this.props.moves.placeAllFixed()}
+            title="Place all remaining pieces in a fixed layout"
+          >
+            Place All (Fixed)
+          </button>
+          <button
+            disabled={!canBulkPlace}
+            onClick={() => this.props.moves.placeAllRandom()}
+            title="Place all remaining pieces randomly"
+          >
+            Place All (Random)
+          </button>
         </div>
         <div className="setup-hint">
           {setupTarget == null ? "Click an empty back-rank hex" : `Target: ${setupTarget + 1}`}

@@ -1,9 +1,3 @@
-import { INVALID_MOVE } from 'boardgame.io/dist/cjs/core.js';
-import {
-  PIECES, PAWN_START, SETUP_POOL_W, SETUP_POOL_B,
-  isBackRank, legalMovesFromCells, nextStateCells, isKingAttacked
-} from "./shared/rules.js";
-
 /**
  * @typedef {'W'|'B'} Color
  * @typedef {{color: Color, glyph: string}} Piece
@@ -11,6 +5,12 @@ import {
  * @typedef {{cells: Cells, setupPool?: Record<Color, string[]>, [k: string]: any}} GameState
  * @typedef {{currentPlayer: '0'|'1', phase?: string, [k: string]: any}} Ctx
  */
+
+import { INVALID_MOVE } from 'boardgame.io/dist/cjs/core.js';
+import {
+  PIECES, PAWN_START, SETUP_POOL, BACK_RANK,
+  isBackRank, legalMovesFromCells, nextStateCells, isKingAttacked
+} from "./shared/rules.js";
 
 /**
  * Current side to move → `'W'` for player 0, `'B'` for player 1.
@@ -128,7 +128,7 @@ export const HexChess = {
     PAWN_START["W"].forEach((n) => (cells[n] = PIECES.WP));
     PAWN_START["B"].forEach((n) => (cells[n] = PIECES.BP));
 
-    const setupPool = { W: [...SETUP_POOL_W], B: [...SETUP_POOL_B] };
+    const setupPool = { W: [...SETUP_POOL["W"]], B: [...SETUP_POOL["B"]] };
 
     return {
       cells,
@@ -144,7 +144,7 @@ export const HexChess = {
       endIf: ({ G }) => !!G.setupPool && G.setupPool.W?.length === 0 && G.setupPool.B?.length === 0,
       next: "play",
       moves: {
-        // Setup move: place one non-pawn piece on your back rank
+        // place one non-pawn piece on your back rank
         placePiece: ({ G, ctx }, targetIndex, pieceCode) => {
           const color = colorToMove(ctx);
 
@@ -160,6 +160,50 @@ export const HexChess = {
           const index = G.setupPool[color].indexOf(pieceCode);
           G.setupPool[color].splice(index, 1);
         },
+        // Automatically places all remaining pieces in fixed positions
+        placeAllFixed: ({ G, ctx }) => {
+          const color = colorToMove(ctx);
+          const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] == null);
+          const setupPool = G.setupPool[color];
+
+          if (setupPool.length === 0 || emptyBackRankCells.length === 0) return INVALID_MOVE;
+
+          // Keep only the codes still in the player's pool, in fixed order
+          const remainingInOrder = SETUP_POOL[color].filter((code) => setupPool.includes(code));
+
+          // Place as many as we can (handles partial state gracefully)
+          const n = Math.min(emptyBackRankCells.length, remainingInOrder.length);
+          for (let k = 0; k < n; k++) {
+            const toIndex = emptyBackRankCells[k];
+            const pieceCode = remainingInOrder[k];
+            G.cells[toIndex] = PIECES[pieceCode];
+            // remove from pool
+            const j = setupPool.indexOf(pieceCode);
+            if (j >= 0) setupPool.splice(j, 1);
+          }
+        },
+        // Automatically places all remaining pieces in random positions
+        placeAllRandom: ({ G, ctx, random }) => {
+          const color = colorToMove(ctx);
+          const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] == null);
+          const setupPool = G.setupPool[color];
+
+          if (setupPool.length === 0 || emptyBackRankCells.length === 0) return INVALID_MOVE;
+
+          const shuffled = random.Shuffle(setupPool.slice());
+
+          // Place as many as we can
+          const n = Math.min(emptyBackRankCells.length, shuffled.length);
+          for (let k = 0; k < n; k++) {
+            const toIndex = emptyBackRankCells[k];
+            const code = shuffled[k];
+            G.cells[toIndex] = PIECES[code];
+            // remove from pool
+            const j = setupPool.indexOf(code);
+            if (j >= 0) setupPool.splice(j, 1);
+          }
+        },
+
       },
     },
 

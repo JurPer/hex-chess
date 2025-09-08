@@ -59,6 +59,8 @@
   display: grid;
   gap: 8px;
 }
+/* setup-actions {
+} */
 .setup-hint {
   text-align: left;
 }

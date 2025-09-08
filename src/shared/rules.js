@@ -1,7 +1,4 @@
 /**
- * @file Rules constants and tiny predicates shared by Game and Board.
- * Indices are 0-based (cell label N on the board corresponds to index N-1).
- *
  * @typedef {'W'|'B'} Color
  * @typedef {{color: Color, glyph: string}} Piece
  * @typedef {(Piece|null)[]} Cells
@@ -79,20 +76,17 @@ export const PAWN_CAPTURE_DIRS = { W: [1, 3], B: [0, 4] };
 export const PAWN_FORWARD_DIR = { W: 2, B: 5 };  // W: (0,-1) up, B: (0,1) down
 
 /**
- * Setup pool for White (piece codes placed during Setup phase).
- * Order is player-chosen during placement.
+ * Setup pool for White and Black (piece codes placed during Setup phase).
+ * - When placing one by one, the order is determined by the player
+ * - When placing all at once, this fixed order is used
+ * - When placing all at random, a random order is used
  *
  * @type {SetupPieceCode[]}
  */
-export const SETUP_POOL_W = ['WR', 'WN', 'WB', 'WQ', 'WK'];
-
-/**
- * Setup pool for Black (piece codes placed during Setup phase).
- * Order is player-chosen during placement.
- *
- * @type {SetupPieceCode[]}
- */
-export const SETUP_POOL_B = ['BR', 'BN', 'BB', 'BQ', 'BK'];
+export const SETUP_POOL = Object.freeze({
+  W: Object.freeze(['WR', 'WN', 'WB', 'WQ', 'WK']),
+  B: Object.freeze(['BR', 'BN', 'BB', 'BQ', 'BK']),
+});
 
 /**
  * Predicate: Is cell at `index` on the back rank for `color`?

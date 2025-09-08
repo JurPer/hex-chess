@@ -1,5 +1,3 @@
-const SQRT3 = Math.sqrt(3);
-
 /**
  * Converts axial coordinates to pixel coordinates for a flat topped hexagon
  *
@@ -11,7 +9,7 @@ const SQRT3 = Math.sqrt(3);
  */
 export function axialToPixelFlat(q, r, size) {
   const x = size * (3 / 2) * q;
-  const y = size * SQRT3 * (r + q / 2);
+  const y = size * Math.sqrt(3) * (r + q / 2);
   return { x, y };
 }
 
