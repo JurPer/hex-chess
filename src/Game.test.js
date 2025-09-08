@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GRID, IDX_BY_QR, getIndexOf } from './Game';
+import { GRID, IDX_BY_QR, getIndexOf } from './shared/hexGrid.js';
 
 describe('hex index maps', () => {
   it('has 1:1 mapping of coords to indices', () => {

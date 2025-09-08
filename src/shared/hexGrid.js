@@ -35,17 +35,27 @@ export function hexPointsFlat(cx, cy, size) {
 }
 
 /**
- * Directions (vectors) in cube coordinates for a flat-topped hexagon
- *
- * @type {Array<[number, number, number]>} Array of arrays of numbers
+ * Six cube orthogonal directions (flat-top hexes).
+ * - 0: N, 1: NW, 2: SW, 3: S, 4: SE, 5: NE
+ * @type {[number,number, number][]} 
  */
-const DIR = [
-  [0, 1, -1], // 0
-  [-1, 1, 0], // 1
-  [-1, 0, 1], // 2
-  [0, -1, 1], // 3
-  [1, -1, 0], // 4
-  [1, 0, -1], // 5
+const CUBE_DIRS = [
+  [0, 1, -1],
+  [-1, 1, 0],
+  [-1, 0, 1],
+  [0, -1, 1],
+  [1, -1, 0],
+  [1, 0, -1],
+];
+
+/**
+ * Six axial orthogonal directions (flat-top hexes).
+ * - 0: SW, 1: NW, 2: N, 3: NE, 4: SE, 5: S
+ * @type {[number,number][]}
+ */
+export const AXIAL_DIRS = [
+  [1, 0], [1, -1], [0, -1],
+  [-1, 0], [-1, 1], [0, 1],
 ];
 
 /**
@@ -114,9 +124,9 @@ export function hexagonStarAxial(R = 2) {
   const out = new Map(base.map((c) => [cubeKey(c), c])); // dedupe
 
   for (let s = 0; s < 6; s++) {
-    const dirOut = DIR[s];
+    const dirOut = CUBE_DIRS[s];
     const dirIn = mul(dirOut, -1);
-    const dirSide = DIR[(s + 1) % 6];
+    const dirSide = CUBE_DIRS[(s + 1) % 6];
     const corner = mul(dirOut, R);
 
     for (let steps = 0; steps < R; steps++) {
@@ -142,3 +152,29 @@ export function hexagonStarAxial(R = 2) {
   axial.sort((a, b) => a.q - b.q || b.r - a.r);
   return axial;
 }
+
+/**
+ * Star-shaped hex grid (axial coordinates) used by this game.
+ * Built for radius `R=2`, yielding 37 cells in a hex-star shape.
+ * @type {{q:number, r:number}[]}
+ */
+export const GRID = hexagonStarAxial(2);
+
+/**
+ * Fast lookup from axial `"q,r"` to GRID index.
+ * Keys are stringified axial coords, values are 0-based indices.
+ * @type {Map<string, number>}
+ */
+export const IDX_BY_QR = new Map(GRID.map((c, i) => [`${c.q},${c.r}`, i]));
+
+/**
+ * Convert axial coords to a GRID index (or `null` if off-board).
+ * @export
+ * @param {number} q
+ * @param {number} r
+ * @returns {number|null}
+ */
+export const getIndexOf = (q, r) => {
+  const v = IDX_BY_QR.get(`${q},${r}`);
+  return v === undefined ? null : v;
+};

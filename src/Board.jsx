@@ -1,15 +1,7 @@
 import React from "react";
 import "./board.css";
-import { PIECES, legalMovesFromCells } from "./Game";
-import { axialToPixelFlat, hexPointsFlat, hexagonStarAxial } from "./hexGrid";
-import { isBackRank } from "./shared/rules";
-
-/**
- * Hexagonal grid as array of axial coordinates
- *
- * @type {Array<[number, number]}
- */
-const GRID = hexagonStarAxial(2);
+import { axialToPixelFlat, hexPointsFlat, GRID } from "./shared/hexGrid";
+import { PIECES, legalMovesFromCells, isBackRank } from "./shared/rules";
 
 /**
  * Handles the UI for the Hex Chess game.
