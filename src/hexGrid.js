@@ -1,12 +1,29 @@
-// geometry (flat-top hexes) 
 const SQRT3 = Math.sqrt(3);
 
+/**
+ * Converts axial coordinates to pixel coordinates for a flat topped hexagon
+ *
+ * @export
+ * @param {number} q 
+ * @param {number} r 
+ * @param {number} size 
+ * @returns {{ x: number; y: number; }} 
+ */
 export function axialToPixelFlat(q, r, size) {
   const x = size * (3 / 2) * q;
   const y = size * SQRT3 * (r + q / 2);
   return { x, y };
 }
 
+/**
+ * Calculates the points / vertices of a flat-topped hexagon
+ *
+ * @export
+ * @param {number} cx 
+ * @param {number} cy 
+ * @param {number} size 
+ * @returns {String} "x1,y1 x2,y2 x3,y3 ..."
+ */
 export function hexPointsFlat(cx, cy, size) {
   // flat-top corners at 0°, 60°, …, 300°
   const pts = [];
@@ -17,10 +34,11 @@ export function hexPointsFlat(cx, cy, size) {
   return pts.join(" ");
 }
 
-// Flat-top hex grid for your 37-cell star (R=2) + helpers.
-// Everything is plain arrays/objects (serializable-friendly).
-
-// cube helpers (orientation-agnostic) 
+/**
+ * Directions (vectors) in cube coordinates for a flat-topped hexagon
+ *
+ * @type {Array<[number, number, number]>} Array of arrays of numbers
+ */
 const DIR = [
   [0, 1, -1], // 0
   [-1, 1, 0], // 1
@@ -29,12 +47,47 @@ const DIR = [
   [1, -1, 0], // 4
   [1, 0, -1], // 5
 ];
+
+/**
+ * Adds two vectors
+ *
+ * @param {number[]} a 
+ * @param {number[]} b 
+ * @returns {number[]} 
+ */
 const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+
+/**
+ * Multiplies a vector with a number (scalar)
+ *
+ * @param {number[]} a 
+ * @param {number} k 
+ * @returns {number[]} 
+ */
 const mul = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
+
+/**
+ * Converts cube coordinates (x, y, z) to axial coordinates (simply drops y because y=-x-z)
+ *
+ * @param {[number, number, number]} cube 
+ * @returns {{ q: number; r: number; }} 
+ */
 const toAxial = ([x, , z]) => ({ q: x, r: z });
+
+/**
+ * Creates a key out of cube coordinates (used for storing coordinates in a map)
+ *
+ * @param {number[]} c 
+ * @returns {string} 
+ */
 const cubeKey = (c) => `${c[0]},${c[1]},${c[2]}`;
 
-/* radius-2 hex (19 cells) in cube coords */
+/**
+ * Creates a hexagonal grid in cube coords (default with radius 2 = 19 cells)
+ *
+ * @param {number} [R=2] Hex radius (number of rings around the origin)
+ * @returns {Array<[number, number, number]>} Array of cube coordinates [x, y, z]
+ */
 function hexagonCube(R = 2) {
   const cells = [];
   for (let x = -R; x <= R; x++) {
@@ -48,7 +101,14 @@ function hexagonCube(R = 2) {
   return cells;
 }
 
-// Build hex star (flat-top)
+/**
+ * Creates a star-shaped grid of flat-topped hexagons. Starts with a basic hexagonal grid (radius R) 
+ * and then adds a triangle of hexagons on each side
+ *
+ * @export
+ * @param {number} [R=2] Hex radius (number of rings around the origin)
+ * @returns {Array<[number, number]>} Array of flat-topped hexagon coordinates [q, r]
+ */
 export function hexagonStarAxial(R = 2) {
   const base = hexagonCube(R);
   const out = new Map(base.map((c) => [cubeKey(c), c])); // dedupe
@@ -59,7 +119,6 @@ export function hexagonStarAxial(R = 2) {
     const dirSide = DIR[(s + 1) % 6];
     const corner = mul(dirOut, R);
 
-    // scale for larger star shaped boards
     for (let steps = 0; steps < R; steps++) {
       const hexSide = add(corner, mul(dirSide, steps + 1));
 

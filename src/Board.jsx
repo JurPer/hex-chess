@@ -2,9 +2,22 @@ import React from "react";
 import "./board.css";
 import { PIECES, legalMovesFromCells } from "./Game";
 import { axialToPixelFlat, hexPointsFlat, hexagonStarAxial } from "./hexGrid";
+import { isBackRank } from "./shared/rules";
 
+/**
+ * Hexagonal grid as array of axial coordinates
+ *
+ * @type {Array<[number, number]}
+ */
 const GRID = hexagonStarAxial(2);
 
+/**
+ * Handles the UI for the Hex Chess game.
+ *
+ * @export
+ * @class HexChessBoard
+ * @extends {React.Component}
+ */
 export default class HexChessBoard extends React.Component {
   state = { setupTarget: null, selectedIndex: null, legalTargets: [] };
 
@@ -12,13 +25,11 @@ export default class HexChessBoard extends React.Component {
   isSetupPhase() {
     return this.props.ctx?.phase === "setup";
   }
-  currentColor() {
+
+  getCurrentColor() {
     return this.props.ctx?.currentPlayer === "0" ? "W" : "B";
   }
-  isBackRankCell(id) {
-    const back = this.currentColor() === "W" ? [3, 10, 16, 21, 27] : [9, 15, 20, 26, 33];
-    return back.includes(id);
-  }
+
   componentDidUpdate(prevProps) {
     // Clear setup target when the pool changes (placement done)
     if (prevProps.G?.setupPool !== this.props.G?.setupPool && this.state.setupTarget != null) {
@@ -33,11 +44,16 @@ export default class HexChessBoard extends React.Component {
     }
   }
 
-  /* ****** Click handling ****** */
+  /**
+   * Handles clicks on the board
+   *
+   * @param {number} id of the clicked cell
+   */
   onHexClick = (id) => {
     const { G } = this.props;
+    const myColor = this.getCurrentColor();
     if (this.isSetupPhase()) {
-      if (G.cells[id] == null && this.isBackRankCell(id)) {
+      if (G.cells[id] == null && isBackRank(myColor, id)) {
         this.setState({ setupTarget: id });
       }
       return;
@@ -45,7 +61,6 @@ export default class HexChessBoard extends React.Component {
 
     // Play phase: selection and commit are local UI
     const piece = G.cells[id];
-    const myColor = this.currentColor();
 
     // 1) select your own piece
     if (piece && piece.color === myColor) {
@@ -68,7 +83,7 @@ export default class HexChessBoard extends React.Component {
 
   renderSetupPanel() {
     if (!this.isSetupPhase()) return null;
-    const color = this.currentColor();
+    const color = this.getCurrentColor();
     const setupPool = this.props.G.setupPool[color]; // ['WR','WN','WB','WQ','WK']
     const { setupTarget } = this.state;
 
@@ -135,7 +150,9 @@ export default class HexChessBoard extends React.Component {
             const piece = this.props.G?.cells?.[id] ?? null;
 
             const canPlaceHere =
-              this.isSetupPhase() && this.isBackRankCell(id) && this.props.G.cells[id] == null;
+              this.isSetupPhase() &&
+              isBackRank(this.getCurrentColor(), id) &&
+              this.props.G.cells[id] == null;
 
             const isSelected = selectedIndex === id;
             const isLegalMove = legalTargets.includes(id);

@@ -2,12 +2,20 @@ import React from "react";
 import "./App.css";
 
 import { Client } from "boardgame.io/react";
-import { Local, SocketIO } from "boardgame.io/multiplayer";
+import { SocketIO } from "boardgame.io/multiplayer";
 import { Lobby } from "boardgame.io/react";
 import { HexChess } from "./Game";
-//import { HexChessBoard } from "./Board";
 import HexChessBoard from "./Board";
 
+/**
+ * Enum-like type representing the application run mode.
+ *
+ * Provides three predefined, singleton instances: {@link AppType.Solo},
+ * {@link AppType.Multiplayer}, and {@link AppType.Lobby}.
+ *
+ * @class AppType
+ * @classdesc Represents a specific app mode (solo, multiplayer, lobby).
+ */
 class AppType {
   static Solo = new AppType("solo");
   static Multiplayer = new AppType("multiplayer");
@@ -18,6 +26,12 @@ class AppType {
   }
 }
 
+/**
+ * Handles the landing page, asks for the app type and then loads the appropriate game component based on the user's choice.
+ *
+ * @class App
+ * @extends {React.Component}
+ */
 class App extends React.Component {
   state = { appType: null, playerID: null };
 
