@@ -141,7 +141,11 @@ export const HexChess = {
     setup: {
       start: true,
       turn: { moveLimit: 1 }, // alternate automatically
-      endIf: ({ G }) => !!G.setupPool && G.setupPool.W?.length === 0 && G.setupPool.B?.length === 0,
+      endIf: ({ G }) => {
+        return !!G.setupPool
+          && (SETUP_POOL.W.length - G.setupPool.W?.length === 5)
+          && (SETUP_POOL.B.length - G.setupPool.B?.length === 5)
+      },
       next: "play",
       moves: {
         // place one non-pawn piece on your back rank

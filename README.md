@@ -73,6 +73,11 @@ All moves follow the hexagrams orthogonal directions.
 
 - Moves any number of steps in any orthogonal direction.
 
+### Charger
+
+- Moves any number of steps in any forward facing direction.
+- White moves "up" | Black moves "down"
+
 ## Running locally
 
 1. Install
@@ -84,3 +89,14 @@ All moves follow the hexagrams orthogonal directions.
 `npm run dev`
 
 3. Open the printed localhost URL in your browser.
+
+## Project structure (overview)
+
+- hexGrid.js – Board shape and coordinate helpers (axial directions, index lookup).
+- rules.js – Pure rules: piece metadata, setup constants, move definitions
+- Game.js – boardgame.io glue: phases (setup → play), moves (placePiece, placeAllFixed, placeAllRandom, play), and simple AI enumeration.
+- Board.jsx – React board: renders the grid, highlights legal moves, handles selection and setup UI.
+
+## License
+
+- MIT

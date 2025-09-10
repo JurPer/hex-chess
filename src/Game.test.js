@@ -24,19 +24,12 @@ describe('hex index maps', () => {
 });
 
 describe('setup', () => {
-  it('setupPool for White and Black have length 5 each', () => {
-    const setupPool = { W: [...SETUP_POOL["W"]], B: [...SETUP_POOL["B"]] };
-    expect(setupPool.W.length).toBe(5);
-    expect(setupPool.B.length).toBe(5);
-  });
   it('changes in setupPool do not affect SETUP_POOL', () => {
     const setupPool = { W: [...SETUP_POOL.W], B: [...SETUP_POOL.B] };
-    expect(setupPool["W"].length).toBe(5);
+    expect(setupPool["W"].length).toBe(SETUP_POOL["W"].length);
     setupPool.W.splice(1, 1);
-    expect(setupPool["W"].length).toBe(4);
-    expect(SETUP_POOL["W"].length).toBe(5);
+    expect(setupPool["W"].length).toBe(SETUP_POOL["W"].length - 1);
     setupPool["W"][0] = "CORRUPTED";
-    expect(setupPool["W"][0]).toBe("CORRUPTED");
-    expect(SETUP_POOL["W"][0]).toBe("WR");
+    expect(setupPool["W"][0]).not.toBe(SETUP_POOL["W"][0]);
   });
 });

@@ -17,14 +17,16 @@ export const PIECES = {
   BP: { color: 'B', glyph: '♟' },
   WK: { color: 'W', glyph: '♔' },
   BK: { color: 'B', glyph: '♚' },
-  WQ: { color: 'W', glyph: '♕' },
-  BQ: { color: 'B', glyph: '♛' },
-  WB: { color: 'W', glyph: '♗' },
-  BB: { color: 'B', glyph: '♝' },
   WN: { color: 'W', glyph: '♘' },
   BN: { color: 'B', glyph: '♞' },
   WR: { color: 'W', glyph: '♖' },
   BR: { color: 'B', glyph: '♜' },
+  WB: { color: 'W', glyph: '♗' },
+  BB: { color: 'B', glyph: '♝' },
+  WQ: { color: 'W', glyph: '♕' },
+  BQ: { color: 'B', glyph: '♛' },
+  WC: { color: 'W', glyph: 'C' },
+  BC: { color: 'B', glyph: 'C' },
 };
 
 /**
@@ -75,8 +77,8 @@ const PAWN_CAPTURE_DIRS = { W: [1, 5], B: [2, 4] };
  * @type {SetupPieceCode[]}
  */
 export const SETUP_POOL = Object.freeze({
-  W: Object.freeze(['WR', 'WN', 'WB', 'WQ', 'WK']),
-  B: Object.freeze(['BR', 'BN', 'BB', 'BQ', 'BK']),
+  W: Object.freeze(['WK', 'WN', 'WB', 'WQ', 'WR', 'WC']),
+  B: Object.freeze(['BK', 'BN', 'BB', 'BQ', 'BR', 'BC']),
 });
 
 /**
@@ -164,6 +166,7 @@ export function legalMovesFromCells(cells, index) {
   if (glyph === PIECES.WR.glyph || glyph === PIECES.BR.glyph) return rookMoves(cells, index);
   if (glyph === PIECES.WB.glyph || glyph === PIECES.BB.glyph) return bishopMoves(cells, index);
   if (glyph === PIECES.WQ.glyph || glyph === PIECES.BQ.glyph) return queenMoves(cells, index);
+  if (glyph === PIECES.WC.glyph || glyph === PIECES.BC.glyph) return chargerMoves(cells, index);
   return [];
 }
 
@@ -261,7 +264,7 @@ function knightMoves(cells, index) {
 }
 
 /**
- * Rook moves: any number of steps vertically (axial directions 0 and 3).
+ * Rook moves: any number of steps vertically (axial directions 0, 3).
  * @param {Cells} cells
  * @param {number} index
  * @returns {number[]}
@@ -275,7 +278,7 @@ function rookMoves(cells, index) {
 
 /**
  * Bishop moves: any number of steps along non-vertical orthogonals
- * (axial directions 1,2,4,5).
+ * (axial directions 1, 2, 4, 5).
  * @param {Cells} cells
  * @param {number} index
  * @returns {number[]}
@@ -301,7 +304,9 @@ function queenMoves(cells, index) {
 }
 
 /**
- * Charger moves: any number of steps vertically (axial directions 1, 0, 5).
+ * Charger moves: any number of steps in the three forward directions 
+ * - White: 1, 0, 5.
+ * - Black: 2, 3, 4.
  * @param {Cells} cells
  * @param {number} index
  * @returns {number[]}
@@ -309,7 +314,7 @@ function queenMoves(cells, index) {
 function chargerMoves(cells, index) {
   const piece = cells[index];
   if (!piece) return [];
-  const directions = [0, 3];
+  const directions = piece.color === "W" ? [1, 0, 5] : [2, 3, 4];
   return directions.flatMap(d => slide(cells, index, d));
 }
 
