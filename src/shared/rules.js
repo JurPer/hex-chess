@@ -35,7 +35,7 @@ const PIECES = {
  * @param {string} code 
  * @returns {string|null} 'W' | 'B' | null
  */
-export const colorOf = (code) => (code ? code[0] : null);
+export const colorOf = (code) => (PIECES[code] ? PIECES[code].color : null);
 
 /**
  * Returns the glyph of the piece with the specified `code`

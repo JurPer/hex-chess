@@ -98,15 +98,18 @@ All moves follow the hexagrams orthogonal directions.
 
 ## How to add more pieces (example: Rook)
 
-1. PIECES: add your piece for white and black
+1. PIECES: add your piece for white and black. 'WR' and 'BR' are the piece codes for the rooks.
 
 ```
 export const PIECES = {
-  WR: { color: 'W', glyph: '♖' },
-  BR: { color: 'B', glyph: '♜' },
+  [...]
+  WR: { color: 'W', glyph: '♖', kind: 'rook' },
+  BR: { color: 'B', glyph: '♜', kind: 'rook' },
+  [...]
+}
 ```
 
-2. SETUP_POOL: add your piece for white and black
+2. SETUP_POOL: add your piece code for white and black.
 
 ```
 export const SETUP_POOL = Object.freeze({
@@ -115,23 +118,22 @@ export const SETUP_POOL = Object.freeze({
 });
 ```
 
-3. legalMovesFromCells: add your move function
+3. legalMovesFromCells: add your move function.
 
 ```
 export function legalMovesFromCells(cells, index) {
   [...]
-if (glyph === PIECES.WR.glyph || glyph === PIECES.BR.glyph)
-  return rookMoves(cells, index);
+    case 'rook': return rookMoves(cells, index);
   [...]
 }
 ```
 
-4. Implement your move function
+4. Implement your move function. Cells simply contain the piece code as a string or null if empty.
 
 ```
 function rookMoves(cells, index) {
-  const piece = cells[index];
-  if (!piece) return [];
+  const pieceCode = cells[index];
+  if (!pieceCode) return [];
   const directions = [0, 3];
   return directions.flatMap(d => slide(cells, index, d));
 }
@@ -142,8 +144,7 @@ function rookMoves(cells, index) {
 ```
 export function isKingAttacked(cells, kingColor) {
   [...]
-  if (isSlideAttacked(rookDirs, glyph => glyph === PIECES.WR.glyph || glyph === PIECES.BR.glyph
-    || glyph === PIECES.WQ.glyph || glyph === PIECES.BQ.glyph)) {
+  if (isSlideAttacked([2, 5], ['rook', 'queen'])) {
     return true;
   }
   [...]
@@ -153,7 +154,3 @@ export function isKingAttacked(cells, kingColor) {
 ## License
 
 - MIT
-
-```
-
-```
