@@ -56,6 +56,17 @@ export const PAWN_START = {
 };
 
 /**
+ * Pawn capture directions (axial) by color for flat-top hexes.
+ * Direction indices reference your {@link AXIAL_DIRS} table:
+ * - 0: N | 1: NW | 2: SW | 3: S | 4: SE | 5: NE
+ * 
+ * White captures NW(1) and NE(5); Black captures SW(2) and SE(4).
+ *
+ * @type {{W:number[], B:number[]}}
+ */
+const PAWN_CAPTURE_DIRS = { W: [1, 5], B: [2, 4] };
+
+/**
  * Setup pool for White and Black (piece codes placed during Setup phase).
  * - When placing one by one, the order is determined by the player
  * - When placing all at once, this fixed order is used
@@ -85,7 +96,7 @@ export const isBackRank = (color, index) => BACK_RANK[color].includes(index);
  * @param {number} index
  * @returns {boolean}
  */
-export const isPawnStart = (color, index) => PAWN_START[color].includes(index);
+const isPawnStart = (color, index) => PAWN_START[color].includes(index);
 
 
 /* ****** Move Logic ****** */
@@ -172,7 +183,7 @@ function pawnMoves(cells, index) {
   if (!piece) return [];
 
   const forward = piece.color === "W" ? 0 : 3;
-  const captureDirection = piece.color === "W" ? [1, 5] : [2, 4];
+  const captureDirection = PAWN_CAPTURE_DIRS[piece.color];
   const oneStep = stepInDirection(index, forward, 1);
   const twoSteps = stepInDirection(index, forward, 2);
 
