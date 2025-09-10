@@ -9,29 +9,29 @@ A small turn-based board game you can play in the browser. It is basically [Star
 
 ## The Board
 
-- Shape: a horizontally oriented regular hexagram, consisting of 37 numbered cells.
-- Orientation: **"orthogonal" directions** are defined as the six directions to a cell's edge-adjacent neighbours. (N, NW, SW, S, SE, NE)
+- **Shape**: a horizontally oriented regular hexagram, consisting of 37 numbered cells.
+- **Orientation**: orthogonal directions are defined as the six directions to a cell's edge-adjacent neighbours. (N, NW, SW, S, SE, NE)
 
 ## Setup Phase
 
 Pawns start on the second rank like in chess.
 At the beginning of the game, the players place five of their other pieces **alternately** on the cells behind their pawns.
 
-- White back-rank cells: 4, 11, 17, 22, 28
-- Black back-rank cells: 10, 16, 21, 27, 34
+- **White** back-rank cells: 4, 11, 17, 22, 28
+- **Black** back-rank cells: 10, 16, 21, 27, 34
 
 For convenience there are two buttons:
 
-- Place All (Fixed): places your remaining pieces down in a fixed order.
-- Place All (Random): places your remaining pieces down in a random order.
+- **Place All (Fixed)**: places your remaining pieces down in a fixed order.
+- **Place All (Random)**: places your remaining pieces down in a random order.
 
 When both players have finished placing, the game automatically switches to the Play phase.
 
 ## Play Phase
 
 - **Your turn**: Click one of your pieces to see its legal moves (shown as small grey dots), then click a destination cell to move.
-- **Capturing**: Move onto an opponent’s piece to capture it.
-- Your turn ends after you move a piece.
+- Move onto an opponent’s piece to **capture** it.
+- Your turn **ends** after you move a piece.
 - Unlike in chess, there is no "check".
 - You **win** the game by capturing the opponent's king.
 - The game is a **draw**, when a player has no legal move.
