@@ -34,7 +34,7 @@ export function hexPointsFlat(cx, cy, size) {
 
 /**
  * Six cube orthogonal directions (flat-top hexes).
- * - 0: N, 1: NW, 2: SW, 3: S, 4: SE, 5: NE
+ * - 0: N | 1: NW | 2: SW | 3: S | 4: SE | 5: NE
  * @type {[number,number, number][]} 
  */
 const CUBE_DIRS = [
@@ -48,12 +48,12 @@ const CUBE_DIRS = [
 
 /**
  * Six axial orthogonal directions (flat-top hexes).
- * - 0: SW, 1: NW, 2: N, 3: NE, 4: SE, 5: S
+ * - 0: N | 1: NW | 2: SW | 3: S | 4: SE | 5: NE
  * @type {[number,number][]}
  */
 export const AXIAL_DIRS = [
-  [1, 0], [1, -1], [0, -1],
-  [-1, 0], [-1, 1], [0, 1],
+  [0, -1], [-1, 0], [-1, 1],
+  [0, 1], [1, 0], [1, -1],
 ];
 
 /**
@@ -117,7 +117,7 @@ function hexagonCube(R = 2) {
  * @param {number} [R=2] Hex radius (number of rings around the origin)
  * @returns {Array<[number, number]>} Array of flat-topped hexagon coordinates [q, r]
  */
-export function hexagonStarAxial(R = 2) {
+export function createHexagram(R = 2) {
   const base = hexagonCube(R);
   const out = new Map(base.map((c) => [cubeKey(c), c])); // dedupe
 
@@ -156,7 +156,7 @@ export function hexagonStarAxial(R = 2) {
  * Built for radius `R=2`, yielding 37 cells in a hex-star shape.
  * @type {{q:number, r:number}[]}
  */
-export const GRID = hexagonStarAxial(2);
+export const GRID = createHexagram(2);
 
 /**
  * Fast lookup from axial `"q,r"` to GRID index.

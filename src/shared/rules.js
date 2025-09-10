@@ -58,22 +58,22 @@ export const PAWN_START = {
 /**
  * Pawn capture directions (axial) by color for flat-top hexes.
  * Direction indices reference your {@link AXIAL_DIRS} table:
- * - 0: SW, 1: NW, 2: N, 3: NE, 4: SE, 5: S
+ * - 0: N | 1: NW | 2: SW | 3: S | 4: SE | 5: NE
  * 
- * White captures NW(1) and NE(3); Black captures SW(0) and SE(4).
+ * White captures NW(1) and NE(5); Black captures SW(2) and SE(4).
  *
  * @type {{W:number[], B:number[]}}
  */
-export const PAWN_CAPTURE_DIRS = { W: [1, 3], B: [0, 4] };
+export const PAWN_CAPTURE_DIRS = { W: [1, 5], B: [2, 4] };
 
 /**
  * Pawn forward direction (axial) by color ({@link AXIAL_DIRS} table).
- * - White moves "up" (N, index 2: [0, -1]).
- * - Black moves "down" (S, index 5: [0, 1]).
+ * - White moves "up" (N, index 0: [0, -1]).
+ * - Black moves "down" (S, index 3: [0, 1]).
  *
  * @type {{W: number, B: number}}
  */
-export const PAWN_FORWARD_DIR = { W: 2, B: 5 };  // W: (0,-1) up, B: (0,1) down
+export const PAWN_FORWARD_DIR = { W: 0, B: 3 };
 
 /**
  * Setup pool for White and Black (piece codes placed during Setup phase).
@@ -268,7 +268,7 @@ function knightMoves(cells, index) {
 }
 
 /**
- * Rook moves: any number of steps vertically (axial directions 2 and 5).
+ * Rook moves: any number of steps vertically (axial directions 0 and 3).
  * @param {Cells} cells
  * @param {number} index
  * @returns {number[]}
@@ -276,13 +276,13 @@ function knightMoves(cells, index) {
 function rookMoves(cells, index) {
   const piece = cells[index];
   if (!piece) return [];
-  const directions = [2, 5];
+  const directions = [0, 3];
   return directions.flatMap(d => slide(cells, index, d));
 }
 
 /**
  * Bishop moves: any number of steps along non-vertical orthogonals
- * (axial directions 0,1,3,4).
+ * (axial directions 1,2,4,5).
  * @param {Cells} cells
  * @param {number} index
  * @returns {number[]}
@@ -290,7 +290,7 @@ function rookMoves(cells, index) {
 function bishopMoves(cells, index) {
   const piece = cells[index];
   if (!piece) return [];
-  const directions = [0, 1, 3, 4];
+  const directions = [1, 2, 4, 5];
   return directions.flatMap(d => slide(cells, index, d));
 }
 
