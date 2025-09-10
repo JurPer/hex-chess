@@ -37,8 +37,8 @@ describe('setup', () => {
 describe('AI helper', () => {
   it('check isKingAttacked by charger', () => {
     const cells = Array(37).fill(null);
-    const kings = { W: PIECES.WK, B: PIECES.BK };
-    const chargers = { W: PIECES.WC, B: PIECES.BC };
+    const kings = { W: 'WK', B: 'BK' };
+    const chargers = { W: 'WC', B: 'BC' };
     const colors = ['W', 'B'];
     const indices = { W: [31, 20, 7], B: [5, 16, 29] };
 

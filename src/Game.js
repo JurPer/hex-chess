@@ -1,15 +1,15 @@
 /**
  * @typedef {'W'|'B'} Color
- * @typedef {{color: Color, glyph: string}} Piece
- * @typedef {(Piece|null)[]} Cells
+ * @typedef {{color: Color, glyph: string, kind: string}} Piece
+ * @typedef {(string|null)[]} Cells
  * @typedef {{cells: Cells, setupPool?: Record<Color, string[]>, [k: string]: any}} GameState
  * @typedef {{currentPlayer: '0'|'1', phase?: string, [k: string]: any}} Ctx
  */
 
 import { INVALID_MOVE } from 'boardgame.io/dist/cjs/core.js';
 import {
-  PIECES, PAWN_START, SETUP_POOL, BACK_RANK,
-  isBackRank, legalMovesFromCells, nextStateCells, isKingAttacked
+  PAWN_START, SETUP_POOL, BACK_RANK,
+  isBackRank, legalMovesFromCells, nextStateCells, isKingAttacked, colorOf
 } from "./shared/rules.js";
 
 /**
@@ -27,8 +27,8 @@ const colorToMove = (ctx) => (ctx.currentPlayer === '0' ? 'W' : 'B');
  */
 function playerHasAnyMove(G, color) {
   for (let i = 0; i < G.cells.length; i++) {
-    const piece = G.cells[i];
-    if (!piece || piece.color !== color) continue;
+    const pieceCode = G.cells[i];
+    if (!pieceCode || colorOf(pieceCode) !== color) continue;
     if (pieceLegalMoves(G, i).length > 0) return true;
   }
   return false;
@@ -44,9 +44,9 @@ function playerHasAnyMove(G, color) {
  * @returns {boolean}
  */
 function isLegalPlay(G, ctx, from, to) {
-  const piece = G.cells[from];
-  if (!piece) return false;
-  if (piece.color !== colorToMove(ctx)) return false;
+  const pieceCode = G.cells[from];
+  if (!pieceCode) return false;
+  if (colorOf(pieceCode) !== colorToMove(ctx)) return false;
   return pieceLegalMoves(G, from).includes(to);
 }
 
@@ -59,15 +59,15 @@ function isLegalPlay(G, ctx, from, to) {
  * @returns {void}
  */
 function applyPlay(G, from, to) {
-  const movedPiece = G.cells[from];
-  G.cells[to] = movedPiece;
+  const movedPieceCode = G.cells[from];
+  G.cells[to] = movedPieceCode;
   G.cells[from] = null;
 
   // check pawn promotion if applicable; auto-queen for now
-  if (movedPiece.glyph === PIECES.WP.glyph && isBackRank("B", to)) {
-    G.cells[to] = PIECES.WQ;
-  } else if (movedPiece.glyph === PIECES.BP.glyph && isBackRank("W", to)) {
-    G.cells[to] = PIECES.BQ;
+  if (movedPieceCode === 'WP' && isBackRank("B", to)) {
+    G.cells[to] = 'WQ';
+  } else if (movedPieceCode === 'BP' && isBackRank("W", to)) {
+    G.cells[to] = 'BQ';
   }
 }
 
@@ -83,8 +83,8 @@ function applyPlay(G, from, to) {
 function generateAllMoves(G, color) {
   const moves = [];
   for (let from = 0; from < G.cells.length; from++) {
-    const piece = G.cells[from];
-    if (!piece || piece.color !== color) continue;
+    const pieceCode = G.cells[from];
+    if (!pieceCode || colorOf(pieceCode) !== color) continue;
     const legalMoves = pieceLegalMoves(G, from);
     for (const to of legalMoves) moves.push({ from, to });
   }
@@ -126,8 +126,8 @@ export const HexChess = {
     const cells = Array(37).fill(null);
 
     // Setup the pawns
-    PAWN_START["W"].forEach((n) => (cells[n] = PIECES.WP));
-    PAWN_START["B"].forEach((n) => (cells[n] = PIECES.BP));
+    PAWN_START["W"].forEach((n) => (cells[n] = 'WP'));
+    PAWN_START["B"].forEach((n) => (cells[n] = 'BP'));
 
     const setupPool = { W: [...SETUP_POOL["W"]], B: [...SETUP_POOL["B"]] };
 
@@ -157,10 +157,10 @@ export const HexChess = {
           if (!isBackRank(color, targetIndex)) return INVALID_MOVE;
           if (G.cells[targetIndex] != null) return INVALID_MOVE;
           if (!G.setupPool[color].includes(pieceCode)) return INVALID_MOVE;
-          if (!PIECES[pieceCode] || PIECES[pieceCode].color !== color) return INVALID_MOVE;
+          if (!pieceCode || colorOf(pieceCode) !== color) return INVALID_MOVE;
 
           // Place
-          G.cells[targetIndex] = PIECES[pieceCode];
+          G.cells[targetIndex] = pieceCode;
           // Remove from pool
           const index = G.setupPool[color].indexOf(pieceCode);
           G.setupPool[color].splice(index, 1);
@@ -168,7 +168,7 @@ export const HexChess = {
         // Automatically places all remaining pieces in fixed positions
         placeAllFixed: ({ G, ctx }) => {
           const color = colorToMove(ctx);
-          const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] == null);
+          const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] === null);
           const setupPool = G.setupPool[color];
 
           if (setupPool.length === 0 || emptyBackRankCells.length === 0) return INVALID_MOVE;
@@ -181,7 +181,7 @@ export const HexChess = {
           for (let k = 0; k < n; k++) {
             const toIndex = emptyBackRankCells[k];
             const pieceCode = remainingInOrder[k];
-            G.cells[toIndex] = PIECES[pieceCode];
+            G.cells[toIndex] = pieceCode;
             // remove from pool
             const j = setupPool.indexOf(pieceCode);
             if (j >= 0) setupPool.splice(j, 1);
@@ -190,7 +190,7 @@ export const HexChess = {
         // Automatically places all remaining pieces in random positions
         placeAllRandom: ({ G, ctx, random }) => {
           const color = colorToMove(ctx);
-          const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] == null);
+          const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] === null);
           const setupPool = G.setupPool[color];
 
           if (setupPool.length === 0 || emptyBackRankCells.length === 0) return INVALID_MOVE;
@@ -201,10 +201,10 @@ export const HexChess = {
           const n = Math.min(emptyBackRankCells.length, shuffled.length);
           for (let k = 0; k < n; k++) {
             const toIndex = emptyBackRankCells[k];
-            const code = shuffled[k];
-            G.cells[toIndex] = PIECES[code];
+            const pieceCode = shuffled[k];
+            G.cells[toIndex] = pieceCode;
             // remove from pool
-            const j = setupPool.indexOf(code);
+            const j = setupPool.indexOf(pieceCode);
             if (j >= 0) setupPool.splice(j, 1);
           }
         },
@@ -228,8 +228,8 @@ export const HexChess = {
     if (ctx.phase === "setup") return;
 
     // 1) King captured?
-    const whiteKingAlive = G.cells.some(c => c && c.glyph === PIECES.WK.glyph);
-    const blackKingAlive = G.cells.some(c => c && c.glyph === PIECES.BK.glyph);
+    const whiteKingAlive = G.cells.some(c => c && c === 'WK');
+    const blackKingAlive = G.cells.some(c => c && c === 'BK');
 
     if (!whiteKingAlive && !blackKingAlive) return { draw: true };
     if (!whiteKingAlive) return { winner: '1' }; // Black wins
@@ -247,7 +247,7 @@ export const HexChess = {
 
       // --- Setup phase ---
       if (ctx.phase === 'setup') {
-        const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] == null);
+        const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] === null);
         const setupPool = G.setupPool?.[color] ?? [];
 
         // Nothing to do?

@@ -1,7 +1,7 @@
-import React from "react";
-import "./board.css";
-import { axialToPixelFlat, hexPointsFlat, GRID } from "./shared/hexGrid";
-import { PIECES, legalMovesFromCells, isBackRank } from "./shared/rules";
+import React from 'react';
+import './board.css';
+import { axialToPixelFlat, hexPointsFlat, GRID } from './shared/hexGrid';
+import { legalMovesFromCells, isBackRank, colorOf, glyphOf } from './shared/rules';
 
 /**
  * Handles the UI for the Hex Chess game.
@@ -15,11 +15,11 @@ export default class HexChessBoard extends React.Component {
 
   /* ****** Helpers ****** */
   isSetupPhase() {
-    return this.props.ctx?.phase === "setup";
+    return this.props.ctx?.phase === 'setup';
   }
 
   getCurrentColor() {
-    return this.props.ctx?.currentPlayer === "0" ? "W" : "B";
+    return this.props.ctx?.currentPlayer === '0' ? 'W' : 'B';
   }
 
   componentDidUpdate(prevProps) {
@@ -52,10 +52,10 @@ export default class HexChessBoard extends React.Component {
     }
 
     // Play phase: selection and commit are local UI
-    const piece = G.cells[id];
+    const pieceCode = G.cells[id];
 
     // 1) select your own piece
-    if (piece && piece.color === myColor) {
+    if (pieceCode && colorOf(pieceCode) === myColor) {
       const legalTargets = legalMovesFromCells(G.cells, id);
       this.setState({ selectedIndex: id, legalTargets });
       return;
@@ -83,21 +83,21 @@ export default class HexChessBoard extends React.Component {
 
     return (
       <div className="setup-panel">
-        <div className="setup-hint">Setup: {color === "W" ? "White" : "Black"}</div>
+        <div className="setup-hint">Setup: {color === 'W' ? 'White' : 'Black'}</div>
         <div className="setup-pieces">
-          {setupPool.map((code) => (
+          {setupPool.map((pieceCode) => (
             <button
-              key={code}
+              key={pieceCode}
               disabled={setupTarget == null}
-              onClick={() => this.props.moves.placePiece(setupTarget, code)}
-              title={code}
+              onClick={() => this.props.moves.placePiece(setupTarget, pieceCode)}
+              title={pieceCode}
               className="setup-piece-btn"
             >
-              {PIECES[code].glyph}
+              {glyphOf(pieceCode)}
             </button>
           ))}
         </div>
-        <div className="setup-actions" style={{ display: "flex", gap: 8, marginTop: 8 }}>
+        <div className="setup-actions" style={{ display: 'flex', gap: 8, marginTop: 8 }}>
           <button
             disabled={!canBulkPlace}
             onClick={() => this.props.moves.placeAllFixed()}
@@ -114,7 +114,7 @@ export default class HexChessBoard extends React.Component {
           </button>
         </div>
         <div className="setup-hint">
-          {setupTarget == null ? "Click an empty back-rank hex" : `Target: ${setupTarget + 1}`}
+          {setupTarget == null ? 'Click an empty back-rank hex' : `Target: ${setupTarget + 1}`}
         </div>
       </div>
     );
@@ -154,10 +154,10 @@ export default class HexChessBoard extends React.Component {
         <svg
           viewBox={viewBox}
           width={Math.min(640, maxX - minX)}
-          style={{ maxWidth: "100%", height: "auto", display: "block" }}
+          style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
         >
           {centers.map(({ x, y }, id) => {
-            const piece = this.props.G?.cells?.[id] ?? null;
+            const pieceCode = this.props.G?.cells?.[id] ?? null;
 
             const canPlaceHere =
               this.isSetupPhase() &&
@@ -172,12 +172,12 @@ export default class HexChessBoard extends React.Component {
                 {/* cell */}
                 <polygon
                   className={[
-                    isSelected && "selected",
-                    canPlaceHere && "setup-target",
-                    setupTarget === id && "setup-selected",
+                    isSelected && 'selected',
+                    canPlaceHere && 'setup-target',
+                    setupTarget === id && 'setup-selected',
                   ]
                     .filter(Boolean)
-                    .join(" ")}
+                    .join(' ')}
                   points={hexPointsFlat(x, y, size)}
                 />
 
@@ -192,7 +192,7 @@ export default class HexChessBoard extends React.Component {
                 ) : null}
 
                 {/* piece */}
-                {piece ? (
+                {pieceCode ? (
                   <text
                     x={x}
                     y={y}
@@ -201,7 +201,7 @@ export default class HexChessBoard extends React.Component {
                     fontSize={size * 1.2}
                     pointerEvents="none"
                   >
-                    {piece.glyph}
+                    {glyphOf(pieceCode)}
                   </text>
                 ) : null}
               </g>

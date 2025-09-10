@@ -1,8 +1,8 @@
 /**
  * @typedef {'W'|'B'} Color
  * @typedef {{color: Color, glyph: string}} Piece
- * @typedef {(Piece|null)[]} Cells
- * @typedef {'WR'|'WN'|'WB'|'WQ'|'WK'|'BR'|'BN'|'BB'|'BQ'|'BK'} SetupPieceCode
+ * @typedef {(string|null)[]} Cells
+ * @typedef {'WR'|'WN'|'WB'|'WQ'|'WK'|'BR'|'BN'|'BB'|'BQ'|'BK'} PieceCode
  */
 
 import { GRID, AXIAL_DIRS, getIndexOf } from './hexGrid.js';
@@ -12,22 +12,55 @@ import { GRID, AXIAL_DIRS, getIndexOf } from './hexGrid.js';
  * Use values from here (e.g., glyphs) when rendering.
  * @type {Record<'WP'|'BP'|'WK'|'BK'|'WQ'|'BQ'|'WB'|'BB'|'WN'|'BN'|'WR'|'BR', Piece>}
  */
-export const PIECES = {
-  WP: { color: 'W', glyph: '♙' },
-  BP: { color: 'B', glyph: '♟' },
-  WK: { color: 'W', glyph: '♔' },
-  BK: { color: 'B', glyph: '♚' },
-  WN: { color: 'W', glyph: '♘' },
-  BN: { color: 'B', glyph: '♞' },
-  WR: { color: 'W', glyph: '♖' },
-  BR: { color: 'B', glyph: '♜' },
-  WB: { color: 'W', glyph: '♗' },
-  BB: { color: 'B', glyph: '♝' },
-  WQ: { color: 'W', glyph: '♕' },
-  BQ: { color: 'B', glyph: '♛' },
-  WC: { color: 'W', glyph: 'C' },
-  BC: { color: 'B', glyph: 'C' },
+const PIECES = {
+  WP: { color: 'W', glyph: '♙', kind: 'pawn' },
+  BP: { color: 'B', glyph: '♟', kind: 'pawn' },
+  WK: { color: 'W', glyph: '♔', kind: 'king' },
+  BK: { color: 'B', glyph: '♚', kind: 'king' },
+  WN: { color: 'W', glyph: '♘', kind: 'knight' },
+  BN: { color: 'B', glyph: '♞', kind: 'knight' },
+  WR: { color: 'W', glyph: '♖', kind: 'rook' },
+  BR: { color: 'B', glyph: '♜', kind: 'rook' },
+  WB: { color: 'W', glyph: '♗', kind: 'bishop' },
+  BB: { color: 'B', glyph: '♝', kind: 'bishop' },
+  WQ: { color: 'W', glyph: '♕', kind: 'queen' },
+  BQ: { color: 'B', glyph: '♛', kind: 'queen' },
+  WC: { color: 'W', glyph: 'C', kind: 'charger' },
+  BC: { color: 'B', glyph: 'C', kind: 'charger' },
 };
+
+/**
+ * Returns the color of the piece with the specified `code`
+ *
+ * @param {string} code 
+ * @returns {string|null} 'W' | 'B' | null
+ */
+export const colorOf = (code) => (code ? code[0] : null);
+
+/**
+ * Returns the glyph of the piece with the specified `code`
+ *
+ * @param {string} code 
+ * @returns {string|null} '♙' | '♘' | ... | null
+ */
+export const glyphOf = (code) => (PIECES[code] ? PIECES[code].glyph : null);
+
+/**
+ * Returns the kind of the piece with the specified `code`
+ * 
+ * @param {string} code 
+ * @returns {string|null} 'pawn' | 'king' | ... | null
+ */
+export const kindOf = (code) => (PIECES[code] ? PIECES[code].kind : null);
+
+/**
+ * Checks if the pieces with codes `a` and `b` are enemies
+ * 
+ * @param {string} a 
+ * @param {string} b 
+ * @returns 
+ */
+export const isEnemy = (a, b) => a && b && a[0] !== b[0];
 
 /**
  * Back-rank cell indices for placement/promotion by color.
@@ -74,7 +107,7 @@ const PAWN_CAPTURE_DIRS = { W: [1, 5], B: [2, 4] };
  * - When placing all at once, this fixed order is used
  * - When placing all at random, a random order is used
  *
- * @type {SetupPieceCode[]}
+ * @type {PieceCode[]}
  */
 export const SETUP_POOL = Object.freeze({
   W: Object.freeze(['WK', 'WN', 'WB', 'WQ', 'WR', 'WC']),
@@ -126,20 +159,20 @@ function stepInDirection(from, direction, steps = 1) {
  */
 function slide(cells, from, direction) {
   const legalMoves = [];
-  const myColor = cells[from].color;
+  const pieceCode = cells[from];
 
   let current = from;
   while (true) {
     const next = stepInDirection(current, direction, 1);
-    if (next == null) break;
+    if (next === null) break;
 
-    const occupied = cells[next];
-    if (occupied == null) { // empty: can continue
+    const occupiedCode = cells[next];
+    if (occupiedCode === null) { // empty: can continue
       legalMoves.push(next);
       current = next;
       continue;
     }
-    if (occupied.color !== myColor) { // first enemy: capture and stop
+    if (isEnemy(pieceCode, occupiedCode)) { // first enemy: capture and stop
       legalMoves.push(next);
     }
     break; // own piece or enemy — stop the slide / ray
@@ -156,17 +189,19 @@ function slide(cells, from, direction) {
  * @returns {number[]} destination indices
  */
 export function legalMovesFromCells(cells, index) {
-  const piece = cells[index];
-  if (!piece) return [];
-  const glyph = piece.glyph;
+  const pieceCode = cells[index];
+  if (!pieceCode) return [];
 
-  if (glyph === PIECES.WP.glyph || glyph === PIECES.BP.glyph) return pawnMoves(cells, index);
-  if (glyph === PIECES.WK.glyph || glyph === PIECES.BK.glyph) return kingMoves(cells, index);
-  if (glyph === PIECES.WN.glyph || glyph === PIECES.BN.glyph) return knightMoves(cells, index);
-  if (glyph === PIECES.WR.glyph || glyph === PIECES.BR.glyph) return rookMoves(cells, index);
-  if (glyph === PIECES.WB.glyph || glyph === PIECES.BB.glyph) return bishopMoves(cells, index);
-  if (glyph === PIECES.WQ.glyph || glyph === PIECES.BQ.glyph) return queenMoves(cells, index);
-  if (glyph === PIECES.WC.glyph || glyph === PIECES.BC.glyph) return chargerMoves(cells, index);
+  switch (kindOf(pieceCode)) {
+    case 'pawn': return pawnMoves(cells, index);
+    case 'king': return kingMoves(cells, index);
+    case 'knight': return knightMoves(cells, index);
+    case 'rook': return rookMoves(cells, index);
+    case 'bishop': return bishopMoves(cells, index);
+    case 'queen': return queenMoves(cells, index);
+    case 'charger': return chargerMoves(cells, index);
+  }
+
   return [];
 }
 
@@ -182,11 +217,13 @@ export function legalMovesFromCells(cells, index) {
  * @returns {number[]}
  */
 function pawnMoves(cells, index) {
-  const piece = cells[index];
-  if (!piece) return [];
+  const pieceCode = cells[index];
+  if (!pieceCode) return [];
 
-  const forward = piece.color === "W" ? 0 : 3;
-  const captureDirection = PAWN_CAPTURE_DIRS[piece.color];
+  const myColor = colorOf(pieceCode);
+
+  const forward = myColor === "W" ? 0 : 3;
+  const captureDirection = PAWN_CAPTURE_DIRS[myColor];
   const oneStep = stepInDirection(index, forward, 1);
   const twoSteps = stepInDirection(index, forward, 2);
 
@@ -196,7 +233,7 @@ function pawnMoves(cells, index) {
   if (oneStep != null && cells[oneStep] === null) legalMoves.push(oneStep);
 
   // Double step from starting rank (both squares must be empty)
-  const onStart = isPawnStart(piece.color, index);
+  const onStart = isPawnStart(myColor, index);
   if (onStart && oneStep != null && cells[oneStep] === null
     && twoSteps != null && cells[twoSteps] === null) {
     legalMoves.push(twoSteps);
@@ -206,8 +243,8 @@ function pawnMoves(cells, index) {
   for (const direction of captureDirection) {
     const target = stepInDirection(index, direction, 1);
     if (target != null) {
-      const occupied = cells[target];
-      if (occupied && occupied.color !== piece.color) legalMoves.push(target);
+      const occupiedCode = cells[target];
+      if (occupiedCode && isEnemy(pieceCode, occupiedCode)) legalMoves.push(target);
     }
   }
   return legalMoves;
@@ -220,14 +257,14 @@ function pawnMoves(cells, index) {
  * @returns {number[]}
  */
 function kingMoves(cells, index) {
-  const piece = cells[index];
-  if (!piece) return [];
+  const pieceCode = cells[index];
+  if (!pieceCode) return [];
   const legalMoves = [];
   for (let dirIdx = 0; dirIdx < 6; dirIdx++) {
     const target = stepInDirection(index, dirIdx, 1);
-    if (target == null) continue;
-    const occupied = cells[target];
-    if (occupied == null || occupied.color !== piece.color) legalMoves.push(target);
+    if (target === null) continue;
+    const occupiedCode = cells[target];
+    if (occupiedCode === null || isEnemy(pieceCode, occupiedCode)) legalMoves.push(target);
   }
   return legalMoves;
 }
@@ -240,8 +277,8 @@ function kingMoves(cells, index) {
  * @returns {number[]}
  */
 function knightMoves(cells, index) {
-  const piece = cells[index];
-  if (!piece) return [];
+  const pieceCode = cells[index];
+  if (!pieceCode) return [];
   const { q, r } = GRID[index];
   const legalMoves = new Set();
 
@@ -254,8 +291,8 @@ function knightMoves(cells, index) {
 
     for (const target of [left, right]) {
       if (target != null) {
-        const occupied = cells[target];
-        if (!occupied || occupied.color !== piece.color) legalMoves.add(target);
+        const occupiedCode = cells[target];
+        if (!occupiedCode || isEnemy(pieceCode, occupiedCode)) legalMoves.add(target);
       }
     }
   }
@@ -270,8 +307,8 @@ function knightMoves(cells, index) {
  * @returns {number[]}
  */
 function rookMoves(cells, index) {
-  const piece = cells[index];
-  if (!piece) return [];
+  const pieceCode = cells[index];
+  if (!pieceCode) return [];
   const directions = [0, 3];
   return directions.flatMap(d => slide(cells, index, d));
 }
@@ -284,8 +321,8 @@ function rookMoves(cells, index) {
  * @returns {number[]}
  */
 function bishopMoves(cells, index) {
-  const piece = cells[index];
-  if (!piece) return [];
+  const pieceCode = cells[index];
+  if (!pieceCode) return [];
   const directions = [1, 2, 4, 5];
   return directions.flatMap(d => slide(cells, index, d));
 }
@@ -297,8 +334,8 @@ function bishopMoves(cells, index) {
  * @returns {number[]}
  */
 function queenMoves(cells, index) {
-  const piece = cells[index];
-  if (!piece) return [];
+  const pieceCode = cells[index];
+  if (!pieceCode) return [];
   const directions = [0, 1, 2, 3, 4, 5];
   return directions.flatMap(d => slide(cells, index, d));
 }
@@ -312,9 +349,9 @@ function queenMoves(cells, index) {
  * @returns {number[]}
  */
 function chargerMoves(cells, index) {
-  const piece = cells[index];
-  if (!piece) return [];
-  const directions = piece.color === "W" ? [1, 0, 5] : [2, 3, 4];
+  const pieceCode = cells[index];
+  if (!pieceCode) return [];
+  const directions = colorOf(pieceCode) === "W" ? [1, 0, 5] : [2, 3, 4];
   return directions.flatMap(d => slide(cells, index, d));
 }
 
@@ -344,10 +381,9 @@ export function nextStateCells(cells, from, to) {
  * @returns {number} index of the king, or `-1` if not present
  */
 function getKingIndex(cells, color) {
-  const glyph = color === 'W' ? PIECES.WK.glyph : PIECES.BK.glyph;
+  const kingCode = color === 'W' ? 'WK' : 'BK';
   for (let i = 0; i < cells.length; i++) {
-    const piece = cells[i];
-    if (piece && piece.glyph === glyph) return i;
+    if (cells[i] === kingCode) return i;
   }
   return -1; // captured
 }
@@ -362,60 +398,55 @@ function getKingIndex(cells, color) {
 export function isKingAttacked(cells, kingColor) {
   let kingIndex = getKingIndex(cells, kingColor);
   if (kingIndex < 0) return true;
-  const oppColor = kingColor === 'W' ? 'B' : 'W';
+  const kingCode = cells[kingIndex];
 
   // 1) Pawn attacks (symmetric from king square)
   for (const direction of PAWN_CAPTURE_DIRS[kingColor]) {
     const source = stepInDirection(kingIndex, direction, 1);
-    const piece = source != null ? cells[source] : null;
-    if (piece && piece.color === oppColor && (piece.glyph === PIECES.WP.glyph || piece.glyph === PIECES.BP.glyph)) {
+    const pieceCode = source != null ? cells[source] : null;
+    if (pieceCode && isEnemy(kingCode, pieceCode) && (kindOf(pieceCode) === 'pawn')) {
       return true;
     }
   }
   // 2) Knight attacks (L-jumps are symmetrical)
   for (const source of knightMoves(cells, kingIndex)) {
-    const piece = cells[source];
-    if (piece && piece.color === oppColor && (piece.glyph === PIECES.WN.glyph || piece.glyph === PIECES.BN.glyph)) {
+    const pieceCode = cells[source];
+    if (pieceCode && isEnemy(kingCode, pieceCode) && (kindOf(pieceCode) === 'knight')) {
       return true;
     }
   }
   // 3) Sliding attacks: rook/bishop/queen/charger
-  const rookDirs = [2, 5];
-  const bishopDirs = [0, 1, 3, 4];
-  const chargerDirs = { W: [1, 0, 5], B: [2, 3, 4] };
-
-  const isSlideAttacked = (dirs, isAttacker) => {
+  const isSlideAttacked = (dirs, kinds) => {
     for (const direction of dirs) {
       let current = kingIndex;
       while (true) {
         const next = stepInDirection(current, direction, 1);
         if (next == null) break;
-        const piece = cells[next];
-        if (!piece) { current = next; continue; }
-        if (piece.color === oppColor && isAttacker(piece.glyph)) return true;
+        const pieceCode = cells[next];
+        if (pieceCode === null) { current = next; continue; }
+        if (isEnemy(kingCode, pieceCode) && kinds.includes(kindOf(pieceCode))) return true;
         break;
       }
     }
     return false;
   };
 
-  if (isSlideAttacked(rookDirs, glyph => glyph === PIECES.WR.glyph || glyph === PIECES.BR.glyph
-    || glyph === PIECES.WQ.glyph || glyph === PIECES.BQ.glyph)) {
+  if (isSlideAttacked([2, 5], ['rook', 'queen'])) {
     return true;
   }
-  if (isSlideAttacked(bishopDirs, glyph => glyph === PIECES.WB.glyph || glyph === PIECES.BB.glyph
-    || glyph === PIECES.WQ.glyph || glyph === PIECES.BQ.glyph)) {
+  if (isSlideAttacked([0, 1, 3, 4], ['bishop', 'queen'])) {
     return true;
   }
-  if (isSlideAttacked(chargerDirs[kingColor], glyph => glyph === PIECES.WC.glyph || glyph === PIECES.BC.glyph)) {
+  const chargerDirs = { W: [1, 0, 5], B: [2, 3, 4] };
+  if (isSlideAttacked(chargerDirs[kingColor], ['charger'])) {
     return true;
   }
 
   // 4) Adjacent opposing king
   for (let direction = 0; direction < 6; direction++) {
     const source = stepInDirection(kingIndex, direction, 1);
-    const piece = source != null ? cells[source] : null;
-    if (piece && piece.color === oppColor && (piece.glyph === PIECES.WK.glyph || piece.glyph === PIECES.BK.glyph)) {
+    const pieceCode = source != null ? cells[source] : null;
+    if (pieceCode && isEnemy(kingCode, pieceCode) && kindOf('king')) {
       return true;
     }
   }
