@@ -25,8 +25,8 @@ const PIECES = {
   BB: { color: 'B', glyph: '♝', kind: 'bishop' },
   WQ: { color: 'W', glyph: '♕', kind: 'queen' },
   BQ: { color: 'B', glyph: '♛', kind: 'queen' },
-  WC: { color: 'W', glyph: 'C', kind: 'charger' },
-  BC: { color: 'B', glyph: 'C', kind: 'charger' },
+  WC: { color: 'W', glyph: '♤', kind: 'charger' },
+  BC: { color: 'B', glyph: '♠', kind: 'charger' },
 };
 
 /**
