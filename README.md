@@ -72,3 +72,15 @@ All moves follow the hexagrams orthogonal directions.
 ### Queen
 
 - Moves any number of steps in any orthogonal direction.
+
+## Running locally
+
+1. Install
+
+`npm install`
+
+2. Start the dev server
+
+`npm run dev`
+
+3. Open the printed localhost URL in your browser.

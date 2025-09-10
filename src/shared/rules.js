@@ -56,26 +56,6 @@ export const PAWN_START = {
 };
 
 /**
- * Pawn capture directions (axial) by color for flat-top hexes.
- * Direction indices reference your {@link AXIAL_DIRS} table:
- * - 0: N | 1: NW | 2: SW | 3: S | 4: SE | 5: NE
- * 
- * White captures NW(1) and NE(5); Black captures SW(2) and SE(4).
- *
- * @type {{W:number[], B:number[]}}
- */
-export const PAWN_CAPTURE_DIRS = { W: [1, 5], B: [2, 4] };
-
-/**
- * Pawn forward direction (axial) by color ({@link AXIAL_DIRS} table).
- * - White moves "up" (N, index 0: [0, -1]).
- * - Black moves "down" (S, index 3: [0, 1]).
- *
- * @type {{W: number, B: number}}
- */
-export const PAWN_FORWARD_DIR = { W: 0, B: 3 };
-
-/**
  * Setup pool for White and Black (piece codes placed during Setup phase).
  * - When placing one by one, the order is determined by the player
  * - When placing all at once, this fixed order is used
@@ -178,9 +158,10 @@ export function legalMovesFromCells(cells, index) {
 
 /**
  * Pawn moves:
- * - One step forward if empty
+ * - One step forward if empty (white: N(0) | black: S(3))
  * - Two steps from starting rank if both squares empty
- * - Diagonal captures
+ * - Diagonal captures (white: NW(1) and NE(5) | black: SW(2) and SE(4))
+ * - axial directions from {@link AXIAL_DIRS} table
  *
  * @param {Cells} cells
  * @param {number} index
@@ -190,7 +171,8 @@ function pawnMoves(cells, index) {
   const piece = cells[index];
   if (!piece) return [];
 
-  const forward = PAWN_FORWARD_DIR[piece.color];
+  const forward = piece.color === "W" ? 0 : 3;
+  const captureDirection = piece.color === "W" ? [1, 5] : [2, 4];
   const oneStep = stepInDirection(index, forward, 1);
   const twoSteps = stepInDirection(index, forward, 2);
 
@@ -207,7 +189,7 @@ function pawnMoves(cells, index) {
   }
 
   // Captures
-  for (const direction of PAWN_CAPTURE_DIRS[piece.color]) {
+  for (const direction of captureDirection) {
     const target = stepInDirection(index, direction, 1);
     if (target != null) {
       const occupied = cells[target];
@@ -306,6 +288,20 @@ function queenMoves(cells, index) {
   const directions = [0, 1, 2, 3, 4, 5];
   return directions.flatMap(d => slide(cells, index, d));
 }
+
+/**
+ * Charger moves: any number of steps vertically (axial directions 1, 0, 5).
+ * @param {Cells} cells
+ * @param {number} index
+ * @returns {number[]}
+ */
+function chargerMoves(cells, index) {
+  const piece = cells[index];
+  if (!piece) return [];
+  const directions = [0, 3];
+  return directions.flatMap(d => slide(cells, index, d));
+}
+
 
 
 /* ****** AI Helper ****** */
