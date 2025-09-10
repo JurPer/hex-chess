@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { GRID, IDX_BY_QR, getIndexOf } from './shared/hexGrid.js';
-import { SETUP_POOL } from './shared/rules.js';
+import { PIECES, SETUP_POOL, isKingAttacked } from './shared/rules.js';
 
 
 describe('hex index maps', () => {
@@ -31,5 +31,30 @@ describe('setup', () => {
     expect(setupPool["W"].length).toBe(SETUP_POOL["W"].length - 1);
     setupPool["W"][0] = "CORRUPTED";
     expect(setupPool["W"][0]).not.toBe(SETUP_POOL["W"][0]);
+  });
+});
+
+describe('AI helper', () => {
+  it('check isKingAttacked by charger', () => {
+    const cells = Array(37).fill(null);
+    const kings = { W: PIECES.WK, B: PIECES.BK };
+    const chargers = { W: PIECES.WC, B: PIECES.BC };
+    const colors = ['W', 'B'];
+    const indices = { W: [31, 20, 7], B: [5, 16, 29] };
+
+    for (const color of colors) {
+      cells[18] = kings[color];
+      const oppColor = color === 'W' ? 'B' : 'W';
+      for (const index of indices[color]) {
+        cells[index] = chargers[oppColor];
+        expect(isKingAttacked(cells, color)).toBe(true);
+        cells[index] = null;
+      }
+      for (const index of indices[oppColor]) {
+        cells[index] = chargers[oppColor];
+        expect(isKingAttacked(cells, color)).toBe(false);
+        cells[index] = null;
+      }
+    }
   });
 });

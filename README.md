@@ -5,7 +5,6 @@ A small turn-based board game you can play in the browser. It is basically [Star
 ## What is this?
 
 - A playable prototype built with [React](<[url](https://react.dev/)>) and [boardgame.io](<[url](https://boardgame.io/)>).
-- The goal is to **capture your opponent’s king**.
 
 ## The Board
 
@@ -97,6 +96,64 @@ All moves follow the hexagrams orthogonal directions.
 - Game.js – boardgame.io glue: phases (setup → play), moves (placePiece, placeAllFixed, placeAllRandom, play), and simple AI enumeration.
 - Board.jsx – React board: renders the grid, highlights legal moves, handles selection and setup UI.
 
+## How to add more pieces (example: Rook)
+
+1. PIECES: add your piece for white and black
+
+```
+export const PIECES = {
+  WR: { color: 'W', glyph: '♖' },
+  BR: { color: 'B', glyph: '♜' },
+```
+
+2. SETUP_POOL: add your piece for white and black
+
+```
+export const SETUP_POOL = Object.freeze({
+  W: Object.freeze(['WK', 'WN', 'WB', 'WQ', 'WR', 'WC']),
+  B: Object.freeze(['BK', 'BN', 'BB', 'BQ', 'BR', 'BC']),
+});
+```
+
+3. legalMovesFromCells: add your move function
+
+```
+export function legalMovesFromCells(cells, index) {
+  [...]
+if (glyph === PIECES.WR.glyph || glyph === PIECES.BR.glyph)
+  return rookMoves(cells, index);
+  [...]
+}
+```
+
+4. Implement your move function
+
+```
+function rookMoves(cells, index) {
+  const piece = cells[index];
+  if (!piece) return [];
+  const directions = [0, 3];
+  return directions.flatMap(d => slide(cells, index, d));
+}
+```
+
+5. (Optional) isKingAttacked: This is used by the AI to not blunder their king in one turn. Also add your move logic here, if you want.
+
+```
+export function isKingAttacked(cells, kingColor) {
+  [...]
+  if (isSlideAttacked(rookDirs, glyph => glyph === PIECES.WR.glyph || glyph === PIECES.BR.glyph
+    || glyph === PIECES.WQ.glyph || glyph === PIECES.BQ.glyph)) {
+    return true;
+  }
+  [...]
+}
+```
+
 ## License
 
 - MIT
+
+```
+
+```

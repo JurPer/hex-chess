@@ -379,9 +379,10 @@ export function isKingAttacked(cells, kingColor) {
       return true;
     }
   }
-  // 3) Sliding attacks: rook/bishop/queen
+  // 3) Sliding attacks: rook/bishop/queen/charger
   const rookDirs = [2, 5];
   const bishopDirs = [0, 1, 3, 4];
+  const chargerDirs = { W: [1, 0, 5], B: [2, 3, 4] };
 
   const isSlideAttacked = (dirs, isAttacker) => {
     for (const direction of dirs) {
@@ -406,6 +407,9 @@ export function isKingAttacked(cells, kingColor) {
     || glyph === PIECES.WQ.glyph || glyph === PIECES.BQ.glyph)) {
     return true;
   }
+  if (isSlideAttacked(chargerDirs[kingColor], glyph => glyph === PIECES.WC.glyph || glyph === PIECES.BC.glyph)) {
+    return true;
+  }
 
   // 4) Adjacent opposing king
   for (let direction = 0; direction < 6; direction++) {
@@ -415,5 +419,6 @@ export function isKingAttacked(cells, kingColor) {
       return true;
     }
   }
+
   return false;
 }

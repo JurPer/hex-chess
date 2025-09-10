@@ -104,6 +104,7 @@ function pieceLegalMoves(G, index) {
 
 /**
  * Boardgame.io game definition for HexChess.
+ * 
  * Phases:
  *  - `setup`: players alternately place non-pawn pieces on their back ranks.
  *  - `play` : normal play with atomic `play(from,to)` moves.
