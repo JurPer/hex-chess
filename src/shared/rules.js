@@ -51,7 +51,7 @@ export const glyphOf = (code) => (PIECES[code] ? PIECES[code].glyph : null);
  * @param {string} code 
  * @returns {string|null} 'pawn' | 'king' | ... | null
  */
-export const kindOf = (code) => (PIECES[code] ? PIECES[code].kind : null);
+const kindOf = (code) => (PIECES[code] ? PIECES[code].kind : null);
 
 /**
  * Checks if the pieces with codes `a` and `b` are enemies
@@ -60,7 +60,7 @@ export const kindOf = (code) => (PIECES[code] ? PIECES[code].kind : null);
  * @param {string} b 
  * @returns 
  */
-export const isEnemy = (a, b) => a && b && a[0] !== b[0];
+const isEnemy = (a, b) => a && b && a[0] !== b[0];
 
 /**
  * Back-rank cell indices for placement/promotion by color.
