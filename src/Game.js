@@ -239,6 +239,32 @@ export const HexChess = {
   ai: {
     enumerate: (G, ctx) => {
       const color = colorToMove(ctx);
+
+      // --- Setup phase ---
+      if (ctx.phase === 'setup') {
+        const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] == null);
+        const setupPool = G.setupPool?.[color] ?? [];
+
+        // Nothing to do?
+        if (setupPool.length === 0 || emptyBackRankCells.length === 0) return [];
+
+        const moves = [];
+
+        // Enumerate single-piece placements (keeps search branching sane)
+        for (const index of emptyBackRankCells) {
+          for (const code of setupPool) {
+            moves.push({ move: 'placePiece', args: [index, code] });
+          }
+        }
+
+        // (Optional) offer bulk placement shortcuts
+        //moves.push({ move: 'placeAllFixed', args: [] });
+        //moves.push({ move: 'placeAllRandom', args: [] });
+
+        return moves;
+      }
+
+      // --- Play phase ---
       const allMoves = generateAllMoves(G, color);
       const safeMoves = allMoves.filter(({ from, to }) => {
         const nextCells = nextStateCells(G.cells, from, to);
@@ -248,7 +274,7 @@ export const HexChess = {
       const chosenMoves = safeMoves.length ? safeMoves : allMoves;
       // sort by captures first
       chosenMoves.sort((a, b) => (G.cells[b.to] ? 1 : 0) - (G.cells[a.to] ? 1 : 0));
-      return chosenMoves.map(({ from, to }) => ({ move: 'aiPlay', args: [from, to] }));
+      return chosenMoves.map(({ from, to }) => ({ move: 'play', args: [from, to] }));
     },
   },
 };
