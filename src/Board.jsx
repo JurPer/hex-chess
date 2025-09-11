@@ -84,6 +84,9 @@ export default class HexChessBoard extends React.Component {
     return (
       <div className="setup-panel">
         <div className="setup-hint">Setup: {color === 'W' ? 'White' : 'Black'}</div>
+        <div className="setup-hint">
+          {setupTarget == null ? 'Click an empty back-rank hex' : `Target: ${setupTarget + 1}`}
+        </div>
         <div className="setup-pieces">
           {setupPool.map((pieceCode) => (
             <button
@@ -97,7 +100,7 @@ export default class HexChessBoard extends React.Component {
             </button>
           ))}
         </div>
-        <div className="setup-actions" style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <div className="setup-actions">
           <button
             disabled={!canBulkPlace}
             onClick={() => this.props.moves.placeAllFixed()}
@@ -112,9 +115,6 @@ export default class HexChessBoard extends React.Component {
           >
             Place All (Random)
           </button>
-        </div>
-        <div className="setup-hint">
-          {setupTarget == null ? 'Click an empty back-rank hex' : `Target: ${setupTarget + 1}`}
         </div>
       </div>
     );
@@ -135,14 +135,14 @@ export default class HexChessBoard extends React.Component {
     return (
       <aside className="side-panel">
         <div className="turn-banner">
-          <span className="turn-text">{playerLabel} to move</span>
+          <span>{playerLabel} to move</span>
         </div>
         <table className="move-table">
           <thead>
             <tr>
-              <th className="col-turn">#</th>
-              <th className="col-W">White</th>
-              <th className="col-B">Black</th>
+              <th className="col-turn">Turn</th>
+              <th>White</th>
+              <th>Black</th>
             </tr>
           </thead>
           <tbody>
@@ -150,11 +150,12 @@ export default class HexChessBoard extends React.Component {
               const whiteIndex = rowIndex * 2;
               const blackIndex = whiteIndex + 1;
               const whiteActive = lastIndex === whiteIndex;
+              const blackActive = lastIndex === blackIndex;
               return (
                 <tr key={rowIndex}>
                   <td className="col-turn">{row.turn}</td>
                   <td className={`mv ${whiteActive ? 'active' : ''}`}>{row.W}</td>
-                  <td className={`mv ${blackIndex ? 'active' : ''}`}>{row.B}</td>
+                  <td className={`mv ${blackActive ? 'active' : ''}`}>{row.B}</td>
                 </tr>
               );
             })}
@@ -185,9 +186,9 @@ export default class HexChessBoard extends React.Component {
     if (this.props.ctx?.gameover) {
       matchResult =
         this.props.ctx.gameover.winner !== undefined ? (
-          <div id="match-result">Winner: {this.props.ctx.gameover.winner}</div>
+          <div className="match-result">Winner: {this.props.ctx.gameover.winner}</div>
         ) : (
-          <div id="match-result">Draw!</div>
+          <div className="match-result">Draw!</div>
         );
     }
 
@@ -195,7 +196,7 @@ export default class HexChessBoard extends React.Component {
 
     return (
       <div className="game-layout">
-        <div id="board">
+        <div className="board">
           <svg
             viewBox={viewBox}
             width={Math.min(640, maxX - minX)}
@@ -217,6 +218,7 @@ export default class HexChessBoard extends React.Component {
                   {/* cell */}
                   <polygon
                     className={[
+                      `cell-${id % 2}`,
                       isSelected && 'selected',
                       canPlaceHere && 'setup-target',
                       setupTarget === id && 'setup-selected',

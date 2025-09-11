@@ -1,26 +1,36 @@
+html,
+body,
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #49536a;
+  color: #000;
+}
+
+.app {
+  font-size: 64px;
+  color: #fff;
   text-align: center;
 }
 
-#app {
-  font-size: 50px;
-}
-
 .app button {
-  background-color: #04aa6d;
+  background-color: #232a34;
   border: solid;
-  color: white;
+  border-color: #49536a;
+  font-size: 64px;
+  color: #fff;
   padding: 15px 32px;
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  font-size: 32px;
+  border-radius: 10px;
 }
 
 #lobby-view {
+  color: #fff;
   font-size: 20px;
   text-align: center;
 }
@@ -29,10 +39,11 @@
   font-size: 25px;
   display: flex;
   justify-content: center;
+  border-collapse: collapse;
 }
 
-#lobby-view td {
-  border: 1px solid #aaa;
+#lobby-view tr {
+  border: 2px solid #232a34;
 }
 
 #lobby-view button,
