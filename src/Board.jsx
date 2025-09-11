@@ -3,6 +3,8 @@ import './board.css';
 import { axialToPixelFlat, hexPointsFlat, GRID } from './shared/hexGrid';
 import { legalMovesFromCells, isBackRank, colorOf, glyphOf } from './shared/rules';
 
+const colorIndex = (i) => (((GRID[i].q - GRID[i].r) % 3) + 3) % 3;
+
 /**
  * Handles the UI for the Hex Chess game.
  *
@@ -85,7 +87,9 @@ export default class HexChessBoard extends React.Component {
       <div className="setup-panel">
         <div className="setup-hint">Setup: {color === 'W' ? 'White' : 'Black'}</div>
         <div className="setup-hint">
-          {setupTarget == null ? 'Click an empty back-rank hex' : `Target: ${setupTarget + 1}`}
+          {setupTarget == null
+            ? 'Click an empty back-rank hex'
+            : `Selected: ${setupTarget + 1}`}
         </div>
         <div className="setup-pieces">
           {setupPool.map((pieceCode) => (
@@ -202,6 +206,11 @@ export default class HexChessBoard extends React.Component {
             width={Math.min(640, maxX - minX)}
             style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
           >
+            <defs>
+              <filter id="blur">
+                <feGaussianBlur stdDeviation="2" />
+              </filter>
+            </defs>
             {centers.map(({ x, y }, id) => {
               const pieceCode = this.props.G?.cells?.[id] ?? null;
 
@@ -218,7 +227,7 @@ export default class HexChessBoard extends React.Component {
                   {/* cell */}
                   <polygon
                     className={[
-                      `cell-${id % 2}`,
+                      `cell-${colorIndex(id)}`,
                       isSelected && 'selected',
                       canPlaceHere && 'setup-target',
                       setupTarget === id && 'setup-selected',
@@ -229,42 +238,48 @@ export default class HexChessBoard extends React.Component {
                   />
 
                   {/* label 1..37 (optional) */}
-                  <text className="index" x={x} y={y + size * 0.75} textAnchor="middle">
+                  <text
+                    className="index"
+                    x={x}
+                    y={y + size * 0.75}
+                    textAnchor="middle"
+                    pointerEvents="none"
+                  >
                     {id + 1}
                   </text>
-
-                  {/* legal target dot */}
-                  {isLegalMove ? (
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r={size * 0.25}
-                      fill="#9aa0a6"
-                      pointerEvents="none"
-                    />
-                  ) : null}
 
                   {/* piece */}
                   {pieceCode ? (
                     <text
+                      className="piece"
                       x={x}
                       y={y}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
                       fontSize={size * 1.2}
                       pointerEvents="none"
                     >
                       {glyphOf(pieceCode)}
                     </text>
                   ) : null}
+
+                  {/* legal target dot */}
+                  {isLegalMove ? (
+                    <circle
+                      className="dot"
+                      cx={x}
+                      cy={y}
+                      r={size * 0.25}
+                      filter="url(#blur)"
+                      pointerEvents="none"
+                    />
+                  ) : null}
                 </g>
               );
             })}
           </svg>
           {this.renderSetupPanel()}
+          {matchResult}
         </div>
         {this.renderSidePanel()}
-        {matchResult}
       </div>
     );
   }

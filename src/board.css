@@ -9,35 +9,47 @@
   padding-left: 2%;
 }
 .board polygon {
-  fill: #fff;
   stroke: #232a34;
   stroke-width: 2;
 }
 .board polygon.cell-0 {
-  fill: #e8eddf;
+  fill: hsl(219, 20%, 60%);
 }
 .board polygon.cell-1 {
-  fill: #c8d0c2;
+  fill: hsl(219, 20%, 40%);
+}
+.board polygon.cell-2 {
+  fill: hsl(219, 20%, 20%);
 }
 .board polygon:hover {
-  fill: #eeffff;
+  fill: hsl(219, 30%, 80%);
 }
 .board polygon.selected {
-  fill: #eeffe9;
-  stroke: #697386;
+  fill: hsl(219, 40%, 80%);
+  stroke-width: 2.5;
 }
 .board polygon.selected:hover {
-  fill: #eeffe9;
+  fill: hsl(219, 40%, 90%);
 }
 .board polygon.setup-target {
-  fill: #697386;
+  fill: hsl(219, 30%, 80%);
 }
 .board polygon.setup-selected {
-  fill: #dae0ff;
+  fill: hsl(219, 40%, 100%);
 }
 .board text.index {
   font-size: 11px;
   fill: #000;
+}
+.board circle.dot {
+  fill: #ffffff;
+  text-shadow: 0px 0px 1px;
+}
+.board text.piece {
+  fill: #000;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  /*  text-shadow: 1px 1px 0px #000, 1px -1px 0px #000, -1px -1px 0px #000, -1px 1px 0px #000;*/
 }
 
 .setup-panel {
@@ -123,7 +135,6 @@
 
 .match-result {
   margin-top: 5px;
-  width: 450;
-  text-align: left;
-  font-size: 50px;
+  text-align: center;
+  font-size: 60px;
 }
