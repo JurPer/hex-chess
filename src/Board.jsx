@@ -120,6 +120,50 @@ export default class HexChessBoard extends React.Component {
     );
   }
 
+  renderSidePanel() {
+    const playerLabel = this.props.ctx.currentPlayer === '0' ? 'White' : 'Black';
+    const rows = [];
+    for (let i = 0; i < this.props.G.movesLog.length; i += 2) {
+      rows.push({
+        turn: i / 2 + 1,
+        W: this.props.G.movesLog[i] ?? null,
+        B: this.props.G.movesLog[i + 1] ?? null,
+      });
+    }
+    const lastIndex = this.props.G.movesLog.length - 1;
+
+    return (
+      <aside className="side-panel">
+        <div className="turn-banner">
+          <span className="turn-text">{playerLabel} to move</span>
+        </div>
+        <table className="move-table">
+          <thead>
+            <tr>
+              <th className="col-turn">#</th>
+              <th className="col-W">White</th>
+              <th className="col-B">Black</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, rowIndex) => {
+              const whiteIndex = rowIndex * 2;
+              const blackIndex = whiteIndex + 1;
+              const whiteActive = lastIndex === whiteIndex;
+              return (
+                <tr key={rowIndex}>
+                  <td className="col-turn">{row.turn}</td>
+                  <td className={`mv ${whiteActive ? 'active' : ''}`}>{row.W}</td>
+                  <td className={`mv ${blackIndex ? 'active' : ''}`}>{row.B}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </aside>
+    );
+  }
+
   render() {
     const size = 35; // hex size in px
 
@@ -150,65 +194,74 @@ export default class HexChessBoard extends React.Component {
     const { selectedIndex, legalTargets, setupTarget } = this.state;
 
     return (
-      <div id="board">
-        <svg
-          viewBox={viewBox}
-          width={Math.min(640, maxX - minX)}
-          style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-        >
-          {centers.map(({ x, y }, id) => {
-            const pieceCode = this.props.G?.cells?.[id] ?? null;
+      <div className="game-layout">
+        <div id="board">
+          <svg
+            viewBox={viewBox}
+            width={Math.min(640, maxX - minX)}
+            style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+          >
+            {centers.map(({ x, y }, id) => {
+              const pieceCode = this.props.G?.cells?.[id] ?? null;
 
-            const canPlaceHere =
-              this.isSetupPhase() &&
-              isBackRank(this.getCurrentColor(), id) &&
-              this.props.G.cells[id] == null;
+              const canPlaceHere =
+                this.isSetupPhase() &&
+                isBackRank(this.getCurrentColor(), id) &&
+                this.props.G.cells[id] == null;
 
-            const isSelected = selectedIndex === id;
-            const isLegalMove = legalTargets.includes(id);
+              const isSelected = selectedIndex === id;
+              const isLegalMove = legalTargets.includes(id);
 
-            return (
-              <g key={id} onClick={() => this.onHexClick(id)}>
-                {/* cell */}
-                <polygon
-                  className={[
-                    isSelected && 'selected',
-                    canPlaceHere && 'setup-target',
-                    setupTarget === id && 'setup-selected',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  points={hexPointsFlat(x, y, size)}
-                />
+              return (
+                <g key={id} onClick={() => this.onHexClick(id)}>
+                  {/* cell */}
+                  <polygon
+                    className={[
+                      isSelected && 'selected',
+                      canPlaceHere && 'setup-target',
+                      setupTarget === id && 'setup-selected',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    points={hexPointsFlat(x, y, size)}
+                  />
 
-                {/* label 1..37 (optional) */}
-                <text className="index" x={x} y={y + size * 0.75} textAnchor="middle">
-                  {id + 1}
-                </text>
-
-                {/* legal target dot */}
-                {isLegalMove ? (
-                  <circle cx={x} cy={y} r={size * 0.25} fill="#9aa0a6" pointerEvents="none" />
-                ) : null}
-
-                {/* piece */}
-                {pieceCode ? (
-                  <text
-                    x={x}
-                    y={y}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize={size * 1.2}
-                    pointerEvents="none"
-                  >
-                    {glyphOf(pieceCode)}
+                  {/* label 1..37 (optional) */}
+                  <text className="index" x={x} y={y + size * 0.75} textAnchor="middle">
+                    {id + 1}
                   </text>
-                ) : null}
-              </g>
-            );
-          })}
-        </svg>
-        {this.renderSetupPanel()}
+
+                  {/* legal target dot */}
+                  {isLegalMove ? (
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={size * 0.25}
+                      fill="#9aa0a6"
+                      pointerEvents="none"
+                    />
+                  ) : null}
+
+                  {/* piece */}
+                  {pieceCode ? (
+                    <text
+                      x={x}
+                      y={y}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize={size * 1.2}
+                      pointerEvents="none"
+                    >
+                      {glyphOf(pieceCode)}
+                    </text>
+                  ) : null}
+                </g>
+              );
+            })}
+          </svg>
+          {this.renderSetupPanel()}
+        </div>
+        {this.renderSidePanel()}
         {matchResult}
       </div>
     );

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { GRID, IDX_BY_QR, getIndexOf } from './shared/hexGrid.js';
-import { PIECES, SETUP_POOL, isKingAttacked } from './shared/rules.js';
+import { SETUP_POOL, isKingAttacked } from './shared/rules.js';
 
 
 describe('hex index maps', () => {

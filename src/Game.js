@@ -19,6 +19,25 @@ import {
  */
 const colorToMove = (ctx) => (ctx.currentPlayer === '0' ? 'W' : 'B');
 
+
+
+/**
+ * Turns a move into a string for the moves log.
+ *
+ * @param {number} [from=null] 
+ * @param {string} pieceCode 
+ * @param {number} to 
+ * @param {boolean} [captured=false] 
+ * @param {boolean} [promoted=false] 
+ * @returns {string} 
+ */
+function moveToString(from = null, pieceCode, to, captured = false, promoted = false) {
+  let moveString = '';
+  moveString += (from !== null ? (from + 1) : 'S: ');
+  moveString += pieceCode.slice(1) + (captured ? 'x' : '') + (to + 1) + (promoted ? '=Q' : '');
+  return moveString;
+}
+
 /**
  * Does the player with `color` have at least one legal move?
  * @param {GameState} G
@@ -60,15 +79,21 @@ function isLegalPlay(G, ctx, from, to) {
  */
 function applyPlay(G, from, to) {
   const movedPieceCode = G.cells[from];
+  const captured = G.cells[to] != null;
   G.cells[to] = movedPieceCode;
   G.cells[from] = null;
 
+  let promoted = false;
   // check pawn promotion if applicable; auto-queen for now
   if (movedPieceCode === 'WP' && isBackRank("B", to)) {
     G.cells[to] = 'WQ';
+    promoted = true;
   } else if (movedPieceCode === 'BP' && isBackRank("W", to)) {
     G.cells[to] = 'BQ';
+    promoted = true;
   }
+
+  G.movesLog.push(moveToString(from, movedPieceCode, to, captured, promoted));
 }
 
 
@@ -135,6 +160,7 @@ export const HexChess = {
       cells,
       phase: "setup",
       setupPool,
+      movesLog: [],
     };
   },
 
@@ -150,17 +176,18 @@ export const HexChess = {
       next: "play",
       moves: {
         // place one non-pawn piece on your back rank
-        placePiece: ({ G, ctx }, targetIndex, pieceCode) => {
+        placePiece: ({ G, ctx }, toIndex, pieceCode) => {
           const color = colorToMove(ctx);
 
           // Validate
-          if (!isBackRank(color, targetIndex)) return INVALID_MOVE;
-          if (G.cells[targetIndex] != null) return INVALID_MOVE;
+          if (!isBackRank(color, toIndex)) return INVALID_MOVE;
+          if (G.cells[toIndex] != null) return INVALID_MOVE;
           if (!G.setupPool[color].includes(pieceCode)) return INVALID_MOVE;
           if (!pieceCode || colorOf(pieceCode) !== color) return INVALID_MOVE;
 
           // Place
-          G.cells[targetIndex] = pieceCode;
+          G.cells[toIndex] = pieceCode;
+          G.movesLog.push(moveToString(null, pieceCode, toIndex));
           // Remove from pool
           const index = G.setupPool[color].indexOf(pieceCode);
           G.setupPool[color].splice(index, 1);
@@ -182,6 +209,7 @@ export const HexChess = {
             const toIndex = emptyBackRankCells[k];
             const pieceCode = remainingInOrder[k];
             G.cells[toIndex] = pieceCode;
+            G.movesLog.push(moveToString(null, pieceCode, toIndex));
             // remove from pool
             const j = setupPool.indexOf(pieceCode);
             if (j >= 0) setupPool.splice(j, 1);
@@ -203,6 +231,7 @@ export const HexChess = {
             const toIndex = emptyBackRankCells[k];
             const pieceCode = shuffled[k];
             G.cells[toIndex] = pieceCode;
+            G.movesLog.push(moveToString(null, pieceCode, toIndex));
             // remove from pool
             const j = setupPool.indexOf(pieceCode);
             if (j >= 0) setupPool.splice(j, 1);
@@ -232,8 +261,8 @@ export const HexChess = {
     const blackKingAlive = G.cells.some(c => c && c === 'BK');
 
     if (!whiteKingAlive && !blackKingAlive) return { draw: true };
-    if (!whiteKingAlive) return { winner: '1' }; // Black wins
-    if (!blackKingAlive) return { winner: '0' }; // White wins
+    if (!whiteKingAlive) return { winner: 'Black' }; // Black wins
+    if (!blackKingAlive) return { winner: 'White' }; // White wins
 
     // 2) No legal moves for the side to move? -> draw (kept for future pieces)
     if (!playerHasAnyMove(G, colorToMove(ctx))) return { draw: true };

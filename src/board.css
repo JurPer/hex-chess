@@ -1,3 +1,9 @@
+.game-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
 #board {
   border-collapse: collapse;
   font-family: monospace;
@@ -73,6 +79,55 @@
   font-size: 20px;
   line-height: 1;
   padding: 6px 10px;
+}
+
+.sidepanel {
+  width: 280px;
+  background: #1e1e1e;
+  color: #e6e6e6;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  font-family: system-ui, sans-serif;
+}
+
+.turn-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #2a2a2a;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.move-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.move-table thead th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  color: #9aa0a6;
+  padding: 4px 6px;
+}
+.move-table .col-turn {
+  width: 32px;
+  color: #9aa0a6;
+}
+.move-table td {
+  padding: 4px 6px;
+}
+
+.move-table tbody tr:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mv.active {
+  background: #244059; /* highlight like lichess dark */
+  border-radius: 4px;
 }
 
 #match-result {
