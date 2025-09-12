@@ -13,7 +13,14 @@ const colorIndex = (i) => (((GRID[i].q - GRID[i].r) % 3) + 3) % 3;
  * @extends {React.Component}
  */
 export default class HexChessBoard extends React.Component {
-  state = { setupTarget: null, selectedIndex: null, legalTargets: [] };
+  state = {
+    setupTarget: null,
+    selectedIndex: null,
+    legalTargets: [],
+    lastColor: null,
+    lastWhiteIndex: null,
+    lastBlackIndex: null,
+  };
 
   /* ****** Helpers ****** */
   isSetupPhase() {
@@ -22,6 +29,23 @@ export default class HexChessBoard extends React.Component {
 
   getCurrentColor() {
     return this.props.ctx?.currentPlayer === '0' ? 'W' : 'B';
+  }
+
+  setLastmove(color) {
+    const movesLog = this.props.G.movesLog;
+    let index = 0;
+    for (let i = 0; i < movesLog.length; i++) {
+      if (movesLog[i][color] != null) {
+        index = i;
+      }
+    }
+
+    this.setState({ lastColor: color });
+    if (color === 'W') {
+      this.setState({ lastWhiteIndex: index });
+    } else {
+      this.setState({ lastBlackIndex: index });
+    }
   }
 
   componentDidUpdate(prevProps) {
@@ -34,7 +58,11 @@ export default class HexChessBoard extends React.Component {
       prevProps.ctx?.phase !== this.props.ctx?.phase ||
       prevProps.ctx?.currentPlayer !== this.props.ctx?.currentPlayer
     ) {
-      this.setState({ selectedIndex: null, legalTargets: [] });
+      this.setState({
+        selectedIndex: null,
+        legalTargets: [],
+      });
+      this.setLastmove(prevProps.ctx?.currentPlayer === '0' ? 'W' : 'B');
     }
   }
 
@@ -45,9 +73,9 @@ export default class HexChessBoard extends React.Component {
    */
   onHexClick = (id) => {
     const { G } = this.props;
-    const myColor = this.getCurrentColor();
+    const color = this.getCurrentColor();
     if (this.isSetupPhase()) {
-      if (G.cells[id] == null && isBackRank(myColor, id)) {
+      if (G.cells[id] == null && isBackRank(color, id)) {
         this.setState({ setupTarget: id });
       }
       return;
@@ -57,7 +85,7 @@ export default class HexChessBoard extends React.Component {
     const pieceCode = G.cells[id];
 
     // 1) select your own piece
-    if (pieceCode && colorOf(pieceCode) === myColor) {
+    if (pieceCode && colorOf(pieceCode) === color) {
       const legalTargets = legalMovesFromCells(G.cells, id);
       this.setState({ selectedIndex: id, legalTargets });
       return;
@@ -67,7 +95,11 @@ export default class HexChessBoard extends React.Component {
     const { selectedIndex, legalTargets } = this.state;
     if (selectedIndex != null && legalTargets.includes(id)) {
       this.props.moves.play(selectedIndex, id);
-      this.setState({ selectedIndex: null, legalTargets: [] });
+      this.setState({
+        selectedIndex: null,
+        legalTargets: [],
+      });
+      this.setLastmove(color);
       return;
     }
 
@@ -78,10 +110,10 @@ export default class HexChessBoard extends React.Component {
   renderSetupPanel() {
     if (!this.isSetupPhase()) return null;
     const color = this.getCurrentColor();
-    const setupPool = this.props.G.setupPool[color]; // ['WR','WN','WB','WQ','WK']
+    const setupPool = this.props.G.setupPool[color];
     const { setupTarget } = this.state;
 
-    const canBulkPlace = setupPool.length > 0; // enable only if pieces remain
+    const canBulkPlace = setupPool.length > 0;
 
     return (
       <div className="setup-panel">
@@ -96,7 +128,10 @@ export default class HexChessBoard extends React.Component {
             <button
               key={pieceCode}
               disabled={setupTarget == null}
-              onClick={() => this.props.moves.placePiece(setupTarget, pieceCode)}
+              onClick={() => {
+                this.props.moves.placePiece(setupTarget, pieceCode);
+                this.setLastmove(color);
+              }}
               title={pieceCode}
               className="setup-piece-btn"
             >
@@ -107,14 +142,20 @@ export default class HexChessBoard extends React.Component {
         <div className="setup-actions">
           <button
             disabled={!canBulkPlace}
-            onClick={() => this.props.moves.placeAllFixed()}
+            onClick={() => {
+              this.props.moves.placeAllFixed();
+              this.setLastmove(color);
+            }}
             title="Place all remaining pieces in a fixed layout"
           >
             Place All (Fixed)
           </button>
           <button
             disabled={!canBulkPlace}
-            onClick={() => this.props.moves.placeAllRandom()}
+            onClick={() => {
+              this.props.moves.placeAllRandom();
+              this.setLastmove(color);
+            }}
             title="Place all remaining pieces randomly"
           >
             Place All (Random)
@@ -125,16 +166,9 @@ export default class HexChessBoard extends React.Component {
   }
 
   renderSidePanel() {
-    const playerLabel = this.props.ctx.currentPlayer === '0' ? 'White' : 'Black';
-    const rows = [];
-    for (let i = 0; i < this.props.G.movesLog.length; i += 2) {
-      rows.push({
-        turn: i / 2 + 1,
-        W: this.props.G.movesLog[i] ?? null,
-        B: this.props.G.movesLog[i + 1] ?? null,
-      });
-    }
-    const lastIndex = this.props.G.movesLog.length - 1;
+    const color = this.getCurrentColor();
+    const playerLabel = color === 'W' ? 'White' : 'Black';
+    const { lastColor, lastWhiteIndex, lastBlackIndex } = this.state;
 
     return (
       <aside className="side-panel">
@@ -150,16 +184,19 @@ export default class HexChessBoard extends React.Component {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, rowIndex) => {
-              const whiteIndex = rowIndex * 2;
-              const blackIndex = whiteIndex + 1;
-              const whiteActive = lastIndex === whiteIndex;
-              const blackActive = lastIndex === blackIndex;
+            {this.props.G.movesLog.map((row, index) => {
+              const isWhiteActive = index === lastWhiteIndex && lastColor === 'W';
+              const isBlackActive = index === lastBlackIndex && lastColor === 'B';
+              /*               console.log('\nlastColor ', lastColor);
+              console.log('lastWhiteIndex ', lastWhiteIndex);
+              console.log('isWhiteActive ', isWhiteActive);
+              console.log('lastBlackIndex ', lastBlackIndex);
+              console.log('isBlackActive ', isWhiteActive); */
               return (
-                <tr key={rowIndex}>
-                  <td className="col-turn">{row.turn}</td>
-                  <td className={`mv ${whiteActive ? 'active' : ''}`}>{row.W}</td>
-                  <td className={`mv ${blackActive ? 'active' : ''}`}>{row.B}</td>
+                <tr key={index}>
+                  <td className="col-turn">{index + 1}</td>
+                  <td className={`mv ${isWhiteActive ? 'active' : ''}`}>{row.W}</td>
+                  <td className={`mv ${isBlackActive ? 'active' : ''}`}>{row.B}</td>
                 </tr>
               );
             })}

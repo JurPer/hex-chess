@@ -2,7 +2,7 @@
  * @typedef {'W'|'B'} Color
  * @typedef {{color: Color, glyph: string}} Piece
  * @typedef {(string|null)[]} Cells
- * @typedef {'WR'|'WN'|'WB'|'WQ'|'WK'|'BR'|'BN'|'BB'|'BQ'|'BK'} PieceCode
+ * @typedef {'WR'|'WN'|'WB'|'WQ'|'WK'|'WC'|'BR'|'BN'|'BB'|'BQ'|'BK'|'BC'} PieceCode
  */
 
 import { GRID, AXIAL_DIRS, getIndexOf } from './hexGrid.js';

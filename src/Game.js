@@ -2,6 +2,7 @@
  * @typedef {'W'|'B'} Color
  * @typedef {{color: Color, glyph: string, kind: string}} Piece
  * @typedef {(string|null)[]} Cells
+ * @typedef {'WR'|'WN'|'WB'|'WQ'|'WK'|'WC'|'BR'|'BN'|'BB'|'BQ'|'BK'|'BC'} PieceCode
  * @typedef {{cells: Cells, setupPool?: Record<Color, string[]>, [k: string]: any}} GameState
  * @typedef {{currentPlayer: '0'|'1', phase?: string, [k: string]: any}} Ctx
  */
@@ -25,7 +26,7 @@ const colorToMove = (ctx) => (ctx.currentPlayer === '0' ? 'W' : 'B');
  * Turns a move into a string for the moves log.
  *
  * @param {number} [from=null] 
- * @param {string} pieceCode 
+ * @param {PieceCode} pieceCode 
  * @param {number} to 
  * @param {boolean} [captured=false] 
  * @param {boolean} [promoted=false] 
@@ -36,6 +37,36 @@ function moveToString(from = null, pieceCode, to, captured = false, promoted = f
   moveString += (from !== null ? (from + 1) : 'S: ');
   moveString += pieceCode.slice(1) + (captured ? 'x' : '') + (to + 1) + (promoted ? '=Q' : '');
   return moveString;
+}
+
+/**
+ * Logs a move in the `movesLog`. Works with bulk placements.
+ *
+ * @param {GameState} G 
+ * @param {Color} color 
+ * @param {number} [from=null] 
+ * @param {PieceCode} pieceCode 
+ * @param {number} to 
+ * @param {boolean} [captured=false] 
+ * @param {boolean} [promoted=false] 
+ */
+function logMove(G, color, from = null, pieceCode, to, captured = false, promoted = false) {
+  let index = 0;
+  let foundGap = false;
+  for (index; index < G.movesLog.length; index++) {
+    if (G.movesLog[index][color] == null) {
+      foundGap = true;
+      break;
+    }
+  }
+  const moveString = moveToString(from, pieceCode, to, captured, promoted)
+  if (foundGap) {
+    G.movesLog[index][color] = moveString;
+  } else {
+    let move = { W: null, B: null };
+    move[color] = moveString;
+    G.movesLog.push(move);
+  }
 }
 
 /**
@@ -93,7 +124,7 @@ function applyPlay(G, from, to) {
     promoted = true;
   }
 
-  G.movesLog.push(moveToString(from, movedPieceCode, to, captured, promoted));
+  logMove(G, colorOf(movedPieceCode), from, movedPieceCode, to, captured, promoted);
 }
 
 
@@ -187,7 +218,7 @@ export const HexChess = {
 
           // Place
           G.cells[toIndex] = pieceCode;
-          G.movesLog.push(moveToString(null, pieceCode, toIndex));
+          logMove(G, color, null, pieceCode, toIndex, false, false);
           // Remove from pool
           const index = G.setupPool[color].indexOf(pieceCode);
           G.setupPool[color].splice(index, 1);
@@ -209,10 +240,11 @@ export const HexChess = {
             const toIndex = emptyBackRankCells[k];
             const pieceCode = remainingInOrder[k];
             G.cells[toIndex] = pieceCode;
-            G.movesLog.push(moveToString(null, pieceCode, toIndex));
+            logMove(G, color, null, pieceCode, toIndex, false, false);
             // remove from pool
             const j = setupPool.indexOf(pieceCode);
-            if (j >= 0) setupPool.splice(j, 1);
+            if (j >= 0)
+              setupPool.splice(j, 1);
           }
         },
         // Automatically places all remaining pieces in random positions
@@ -231,10 +263,11 @@ export const HexChess = {
             const toIndex = emptyBackRankCells[k];
             const pieceCode = shuffled[k];
             G.cells[toIndex] = pieceCode;
-            G.movesLog.push(moveToString(null, pieceCode, toIndex));
+            logMove(G, color, null, pieceCode, toIndex, false, false);
             // remove from pool
             const j = setupPool.indexOf(pieceCode);
-            if (j >= 0) setupPool.splice(j, 1);
+            if (j >= 0)
+              setupPool.splice(j, 1);
           }
         },
 
