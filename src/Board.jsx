@@ -2,6 +2,7 @@ import React from 'react';
 import './board.css';
 import { axialToPixelFlat, hexPointsFlat, GRID } from './shared/hexGrid';
 import { legalMovesFromCells, isBackRank, colorOf, glyphOf } from './shared/rules';
+import { spriteOf } from './sprites';
 
 const colorIndex = (i) => (((GRID[i].q - GRID[i].r) % 3) + 3) % 3;
 
@@ -251,6 +252,7 @@ export default class HexChessBoard extends React.Component {
             </defs>
             {centers.map(({ x, y }, id) => {
               const pieceCode = this.props.G?.cells?.[id] ?? null;
+              const sprite = pieceCode && spriteOf(pieceCode);
 
               const canPlaceHere =
                 this.isSetupPhase() &&
@@ -276,24 +278,29 @@ export default class HexChessBoard extends React.Component {
                   />
 
                   {/* label 1..37 (optional) */}
-                  <text
-                    className="index"
-                    x={x}
-                    y={y + size * 0.75}
-                    textAnchor="middle"
-                    pointerEvents="none"
-                  >
+                  <text className="index" x={x} y={y + size * 0.75}>
                     {id + 1}
                   </text>
 
                   {/* piece */}
-                  {pieceCode ? (
+                  {sprite ? (
+                    <image
+                      key={`piece-${id}`}
+                      className="piece"
+                      href={sprite}
+                      x={x}
+                      y={y}
+                      width={size}
+                      height={size}
+                      preserveAspectRatio="xMidYMid meet"
+                    />
+                  ) : pieceCode ? (
                     <text
+                      key={`piece-${id}`}
                       className="piece"
                       x={x}
                       y={y}
                       fontSize={size * 1.2}
-                      pointerEvents="none"
                     >
                       {glyphOf(pieceCode)}
                     </text>
@@ -307,7 +314,6 @@ export default class HexChessBoard extends React.Component {
                       cy={y}
                       r={size * 0.25}
                       filter="url(#blur)"
-                      pointerEvents="none"
                     />
                   ) : null}
                 </g>
