@@ -93,6 +93,9 @@
   line-height: 1;
   padding: 6px 10px;
 }
+.setup-piece-btn:disabled img {
+  filter: grayscale(100%) brightness(100%) opacity(50%);
+}
 
 .side-panel {
   width: 280px;

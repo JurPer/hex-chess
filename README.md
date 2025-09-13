@@ -39,7 +39,7 @@ When both players have finished placing, the game automatically switches to the 
 
 - Pawns that reach the opponent’s back rank promote to a **queen** immediately.
 
-## Piece movement
+## Pieces
 
 All moves follow the hexagrams orthogonal directions.
 
@@ -151,6 +151,16 @@ export function isKingAttacked(cells, kingColor) {
 }
 ```
 
+## Attributions
+
+Images for Pawns, Kings, Knights, Rooks, Bishops, Queens:
+
+- Cburnett, CC BY-SA 3.0 <http://creativecommons.org/licenses/by-sa/3.0/>, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
+
+Images for Chargers:
+
+- NikNaks93, CC BY-SA 3.0 <http://creativecommons.org/licenses/by-sa/3.0/>, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
+
 ## License
 
-- MIT
+MIT

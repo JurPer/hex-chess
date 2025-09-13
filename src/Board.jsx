@@ -137,7 +137,18 @@ export default class HexChessBoard extends React.Component {
               title={pieceCode}
               className="setup-piece-btn"
             >
-              {glyphOf(pieceCode)}
+              {spriteOf(pieceCode) ? (
+                <img
+                  src={spriteOf(pieceCode)}
+                  alt={pieceCode}
+                  disabled={setupTarget == null}
+                  width={50}
+                  height={50}
+                  style={{ pointerEvents: 'none' }}
+                />
+              ) : (
+                glyphOf(pieceCode)
+              )}
             </button>
           ))}
         </div>
@@ -253,6 +264,7 @@ export default class HexChessBoard extends React.Component {
             {centers.map(({ x, y }, id) => {
               const pieceCode = this.props.G?.cells?.[id] ?? null;
               const sprite = pieceCode && spriteOf(pieceCode);
+              const spriteSize = 1.3 * size;
 
               const canPlaceHere =
                 this.isSetupPhase() &&
@@ -288,10 +300,10 @@ export default class HexChessBoard extends React.Component {
                       key={`piece-${id}`}
                       className="piece"
                       href={sprite}
-                      x={x}
-                      y={y}
-                      width={size}
-                      height={size}
+                      x={x - spriteSize / 2}
+                      y={y - spriteSize / 2 - 5}
+                      width={spriteSize}
+                      height={spriteSize}
                       preserveAspectRatio="xMidYMid meet"
                     />
                   ) : pieceCode ? (
