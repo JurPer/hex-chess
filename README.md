@@ -98,7 +98,7 @@ All moves follow the hexagrams orthogonal directions.
 
 ## How to add more pieces (example: Rook)
 
-1. PIECES: add your piece for white and black. 'WR' and 'BR' are the piece codes for the rooks.
+1. PIECES: add your piece for white and black. 'WR' and 'BR' are the **piece codes** for the rooks.
 
 ```
 export const PIECES = {
@@ -109,7 +109,7 @@ export const PIECES = {
 }
 ```
 
-2. SETUP_POOL: add your piece code for white and black.
+2. SETUP_POOL: add your **piece code** for white and black.
 
 ```
 export const SETUP_POOL = Object.freeze({
@@ -118,7 +118,7 @@ export const SETUP_POOL = Object.freeze({
 });
 ```
 
-3. legalMovesFromCells: add your move function.
+3. legalMovesFromCells: add your **move** function.
 
 ```
 export function legalMovesFromCells(cells, index) {
@@ -128,7 +128,7 @@ export function legalMovesFromCells(cells, index) {
 }
 ```
 
-4. Implement your move function. Cells simply contain the piece code as a string or null if empty.
+4. Implement your **move** function. Cells simply contain the piece code as a string or null if empty.
 
 ```
 function rookMoves(cells, index) {
@@ -139,7 +139,7 @@ function rookMoves(cells, index) {
 }
 ```
 
-5. (Optional) isKingAttacked: This is used by the AI to not blunder their king in one turn. Also add your move logic here, if you want.
+5. (Optional) isKingAttacked: This is used by the **AI** to not blunder their king in one turn. Also add your move logic here, if you want.
 
 ```
 export function isKingAttacked(cells, kingColor) {
@@ -151,15 +151,21 @@ export function isKingAttacked(cells, kingColor) {
 }
 ```
 
+6. (Optional) Add **images** of your pieces to the **assets** folder. Name them after your piece code (e.g. '**wr.svg**')
+
 ## Attributions
 
 Images for Pawns, Kings, Knights, Rooks, Bishops, Queens:
 
-- Cburnett, CC BY-SA 3.0 <http://creativecommons.org/licenses/by-sa/3.0/>, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
+- Cburnett, [CC BY-SA 3.0](http://creativecommons.org/licenses/by-sa/3.0/), via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
 
 Images for Chargers:
 
-- NikNaks93, CC BY-SA 3.0 <http://creativecommons.org/licenses/by-sa/3.0/>, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
+- NikNaks93, [CC BY-SA 3.0](http://creativecommons.org/licenses/by-sa/3.0/), via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
+
+Image for chessboard icon:
+
+- [Delapouite](https://delapouite.com/), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), via [game-icons.net](https://game-icons.net/1x1/delapouite/empty-chessboard.html)
 
 ## License
 
