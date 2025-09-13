@@ -33,12 +33,13 @@ export default class HexChessBoard extends React.Component {
 
   setLastmove(color) {
     const movesLog = this.props.G.movesLog;
-    let index = 0;
+    /*     let index = 0;
     for (let i = 0; i < movesLog.length; i++) {
       if (movesLog[i][color] != null) {
         index = i;
       }
-    }
+    } */
+    const index = movesLog.findLastIndex((row) => row?.[color] != null);
 
     this.setState({ lastColor: color });
     if (color === 'W') {

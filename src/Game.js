@@ -7,7 +7,7 @@
  * @typedef {{currentPlayer: '0'|'1', phase?: string, [k: string]: any}} Ctx
  */
 
-import { INVALID_MOVE } from 'boardgame.io/dist/cjs/core.js';
+import { INVALID_MOVE, TurnOrder } from 'boardgame.io/dist/cjs/core.js';
 import {
   PAWN_START, SETUP_POOL, BACK_RANK,
   isBackRank, legalMovesFromCells, nextStateCells, isKingAttacked, colorOf
@@ -128,6 +128,37 @@ function applyPlay(G, from, to) {
 }
 
 
+/**
+ * Place all remaining pieces of the `setupPool` either in a fixed or random order. 
+ *
+ * @param {GameState} G 
+ * @param {Color} color 
+ * @param {RandomAPI} random 
+ * @returns {INVALID_MOVE | void} 
+ */
+function placeAll(G, color, random) {
+  const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] === null);
+  const setupPool = G.setupPool[color];
+
+  if (emptyBackRankCells.length === 0) return INVALID_MOVE;
+
+  // if the RandomAPI is provided, shuffle the remaining pool before placing pieces
+  const remainingPool = random != null ? random.Shuffle(setupPool.slice())
+    : SETUP_POOL[color].filter((code) => setupPool.includes(code));
+
+  const n = Math.min(emptyBackRankCells.length, remainingPool.length);
+  for (let k = 0; k < n; k++) {
+    const toIndex = emptyBackRankCells[k];
+    const pieceCode = remainingPool[k];
+    G.cells[toIndex] = pieceCode;
+    logMove(G, color, null, pieceCode, toIndex, false, false);
+    // remove from pool
+    const j = setupPool.indexOf(pieceCode);
+    if (j >= 0) setupPool.splice(j, 1);
+  }
+}
+
+
 /* ****** AI Helper ****** */
 
 /**
@@ -195,14 +226,28 @@ export const HexChess = {
     };
   },
 
+  turn: {
+    minMoves: 1,
+    maxMoves: 1,
+    order: TurnOrder.RESET,
+  },
+
   phases: {
     setup: {
       start: true,
-      turn: { moveLimit: 1 }, // alternate automatically
+      turn: {
+        minMoves: 0,
+        maxMoves: 1,
+        onBegin: ({ G, ctx, events }) => {
+          const color = colorToMove(ctx);
+          const hasEmpty = BACK_RANK[color].some(i => G.cells[i] === null);
+          if (!hasEmpty) events.endTurn();
+        },
+      },
       endIf: ({ G }) => {
-        return !!G.setupPool
-          && (SETUP_POOL.W.length - G.setupPool.W?.length === 5)
-          && (SETUP_POOL.B.length - G.setupPool.B?.length === 5)
+        const isFullW = BACK_RANK.W.every(i => G.cells[i] !== null);
+        const isFullB = BACK_RANK.B.every(i => G.cells[i] !== null);
+        return isFullW && isFullB;
       },
       next: "play",
       moves: {
@@ -226,56 +271,18 @@ export const HexChess = {
         // Automatically places all remaining pieces in fixed positions
         placeAllFixed: ({ G, ctx }) => {
           const color = colorToMove(ctx);
-          const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] === null);
-          const setupPool = G.setupPool[color];
-
-          if (setupPool.length === 0 || emptyBackRankCells.length === 0) return INVALID_MOVE;
-
-          // Keep only the codes still in the player's pool, in fixed order
-          const remainingInOrder = SETUP_POOL[color].filter((code) => setupPool.includes(code));
-
-          // Place as many as we can (handles partial state gracefully)
-          const n = Math.min(emptyBackRankCells.length, remainingInOrder.length);
-          for (let k = 0; k < n; k++) {
-            const toIndex = emptyBackRankCells[k];
-            const pieceCode = remainingInOrder[k];
-            G.cells[toIndex] = pieceCode;
-            logMove(G, color, null, pieceCode, toIndex, false, false);
-            // remove from pool
-            const j = setupPool.indexOf(pieceCode);
-            if (j >= 0)
-              setupPool.splice(j, 1);
-          }
+          placeAll(G, color, null);
         },
         // Automatically places all remaining pieces in random positions
         placeAllRandom: ({ G, ctx, random }) => {
           const color = colorToMove(ctx);
-          const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] === null);
-          const setupPool = G.setupPool[color];
-
-          if (setupPool.length === 0 || emptyBackRankCells.length === 0) return INVALID_MOVE;
-
-          const shuffled = random.Shuffle(setupPool.slice());
-
-          // Place as many as we can
-          const n = Math.min(emptyBackRankCells.length, shuffled.length);
-          for (let k = 0; k < n; k++) {
-            const toIndex = emptyBackRankCells[k];
-            const pieceCode = shuffled[k];
-            G.cells[toIndex] = pieceCode;
-            logMove(G, color, null, pieceCode, toIndex, false, false);
-            // remove from pool
-            const j = setupPool.indexOf(pieceCode);
-            if (j >= 0)
-              setupPool.splice(j, 1);
-          }
+          placeAll(G, color, random);
         },
 
       },
     },
 
     play: {
-      turn: { moveLimit: 1 }, // alternate automatically
       moves: {
         // Atomic human/AI move
         play: ({ G, ctx }, from, to) => {
@@ -313,7 +320,7 @@ export const HexChess = {
         const setupPool = G.setupPool?.[color] ?? [];
 
         // Nothing to do?
-        if (setupPool.length === 0 || emptyBackRankCells.length === 0) return [];
+        if (emptyBackRankCells.length === 0) return [];
 
         const moves = [];
 
