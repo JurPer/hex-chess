@@ -137,23 +137,28 @@ function applyPlay(G, from, to) {
 function placeAll(G, color, random) {
   const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] === null);
   const setupPool = G.setupPool[color];
+  const numberOfEmpties = emptyBackRankCells.length;
 
-  if (emptyBackRankCells.length === 0) return INVALID_MOVE;
+  if (numberOfEmpties === 0) return INVALID_MOVE;
 
-  // if the RandomAPI is provided, shuffle the remaining pool before placing pieces
   let remainingPool = [];
+  // if the RandomAPI is provided, shuffle the remaining pool before placing pieces
   if (random) {
-    // make sure the king is put in
     remainingPool = random.Shuffle(setupPool.slice())
+    // make sure the king is not left out
+    const kingIndex = remainingPool.indexOf(color + 'K');
+    if (kingIndex >= numberOfEmpties) {
+      const swapIndex = random.Die(numberOfEmpties) - 1;
+      [remainingPool[swapIndex], remainingPool[kingIndex]] = [remainingPool[kingIndex], remainingPool[swapIndex]];
+    }
   } else remainingPool = SETUP_POOL[color].filter((code) => setupPool.includes(code));
 
-  const n = Math.min(emptyBackRankCells.length, remainingPool.length);
-  for (let k = 0; k < n; k++) {
+  // fill every empty back-rank cell
+  for (let k = 0; k < numberOfEmpties; k++) {
     const toIndex = emptyBackRankCells[k];
     const pieceCode = remainingPool[k];
     G.cells[toIndex] = pieceCode;
     logMove(G, color, null, pieceCode, toIndex, false, false);
-    // remove from pool
     const j = setupPool.indexOf(pieceCode);
     if (j >= 0) setupPool.splice(j, 1);
   }
@@ -267,7 +272,16 @@ export const HexChess = {
           logMove(G, color, null, pieceCode, toIndex, false, false);
           // Remove from pool
           const index = G.setupPool[color].indexOf(pieceCode);
-          G.setupPool[color].splice(index, 1);
+          if (index >= 0) G.setupPool[color].splice(index, 1);
+
+          // if only one empty back-rank cell is left and the king was not placed, 
+          // remove all pieces except the king
+          const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] === null);
+          if (emptyBackRankCells.length === 1) {
+            const kingIndex = G.setupPool[color].indexOf(color + 'K');
+            if (kingIndex >= 0) G.setupPool[color] = [color + 'K'];
+          }
+
         },
         // Automatically places all remaining pieces in fixed positions
         placeAllFixed: ({ G, ctx }) => {
@@ -320,7 +334,6 @@ export const HexChess = {
         const emptyBackRankCells = BACK_RANK[color].filter((i) => G.cells[i] === null);
         const setupPool = G.setupPool?.[color] ?? [];
 
-        // Nothing to do?
         if (emptyBackRankCells.length === 0) return [];
 
         const moves = [];
