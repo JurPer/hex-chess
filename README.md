@@ -167,6 +167,11 @@ Image for chessboard icon:
 
 - [Delapouite](https://delapouite.com/), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), via [game-icons.net](https://game-icons.net/1x1/delapouite/empty-chessboard.html)
 
+Sound effects for pieces:
+
+- Move: el_boss, [Creative Commons 0](https://creativecommons.org/publicdomain/zero/1.0/), via [freesound.org](https://freesound.org/s/546119/)
+- Capture: el_boss, [Creative Commons 0](https://creativecommons.org/publicdomain/zero/1.0/), via [freesound.org](https://freesound.org/s/546120/)
+
 ## License
 
 MIT

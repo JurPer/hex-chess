@@ -4,24 +4,35 @@ body,
   height: 100%;
 }
 
+:root {
+  --primary-color: #49536a;
+  --secondary-color: #1f1f24;
+  --board-dark: #565886;
+  --board-mid: #5d66a2;
+  --board-light: #8d89b3;
+  --font-light: #f6f4f6;
+  --font-dark: #1f1f24;
+  --selection-light: #38dcff;
+  --selection-dark: #ff5252;
+}
+
 body {
   margin: 0;
-  background: #49536a;
-  color: #000;
+  background: var(--primary-color);
 }
 
 .app {
   font-size: 64px;
-  color: #fff;
+  color: var(--font-light);
   text-align: center;
 }
 
 .app button {
-  background-color: #232a34;
+  background-color: var(--secondary-color);
   border: solid;
-  border-color: #49536a;
+  border-color: var(--primary-color);
   font-size: 64px;
-  color: #fff;
+  color: var(--font-light);
   padding: 15px 32px;
   text-align: center;
   text-decoration: none;
@@ -30,7 +41,7 @@ body {
 }
 
 #lobby-view {
-  color: #fff;
+  color: var(--font-light);
   font-size: 20px;
   text-align: center;
 }
@@ -43,7 +54,7 @@ body {
 }
 
 #lobby-view tr {
-  border: 2px solid #232a34;
+  border: 2px solid var(--secondary-color);
 }
 
 #lobby-view button,

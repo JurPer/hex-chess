@@ -1,4 +1,4 @@
-const modules = import.meta.glob('./assets/*.svg', { eager: true });
+const modules = import.meta.glob('./assets/ui/*.svg', { eager: true });
 const SPRITES = {};
 for (const path in modules) {
   const url = modules[path]?.default ?? modules[path];

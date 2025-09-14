@@ -3,6 +3,7 @@ import './board.css';
 import { axialToPixelFlat, hexPointsFlat, GRID } from './shared/hexGrid';
 import { legalMovesFromCells, isBackRank, colorOf, glyphOf } from './shared/rules';
 import { spriteOf } from './sprites';
+import { sfx, soundForMove } from './sfx';
 
 const colorIndex = (i) => (((GRID[i].q - GRID[i].r) % 3) + 3) % 3;
 
@@ -15,7 +16,6 @@ const colorIndex = (i) => (((GRID[i].q - GRID[i].r) % 3) + 3) % 3;
  */
 export default class HexChessBoard extends React.Component {
   state = {
-    setupTarget: null,
     selectedIndex: null,
     legalTargets: [],
     lastColor: null,
@@ -24,6 +24,8 @@ export default class HexChessBoard extends React.Component {
   };
 
   /* ****** Helpers ****** */
+  onAnyUserGesture = () => sfx.unlock();
+
   isSetupPhase() {
     return this.props.ctx?.phase === 'setup';
   }
@@ -32,14 +34,17 @@ export default class HexChessBoard extends React.Component {
     return this.props.ctx?.currentPlayer === '0' ? 'W' : 'B';
   }
 
-  setLastmove(color) {
+  getLastMoveString(movesLog) {
+    for (let i = movesLog.length - 1; i >= 0; i--) {
+      const row = movesLog[i];
+      if (row?.B) return row.B;
+      if (row?.W) return row.W;
+    }
+    return null;
+  }
+
+  setLastMove(color) {
     const movesLog = this.props.G.movesLog;
-    /*     let index = 0;
-    for (let i = 0; i < movesLog.length; i++) {
-      if (movesLog[i][color] != null) {
-        index = i;
-      }
-    } */
     const index = movesLog.findLastIndex((row) => row?.[color] != null);
 
     this.setState({ lastColor: color });
@@ -52,8 +57,11 @@ export default class HexChessBoard extends React.Component {
 
   componentDidUpdate(prevProps) {
     // Clear setup target when the pool changes (placement done)
-    if (prevProps.G?.setupPool !== this.props.G?.setupPool && this.state.setupTarget != null) {
-      this.setState({ setupTarget: null });
+    if (
+      prevProps.G?.setupPool !== this.props.G?.setupPool &&
+      this.state.selectedIndex != null
+    ) {
+      this.setState({ selectedIndex: null });
     }
     // Clear selection on phase change / turn change if you like
     if (
@@ -64,7 +72,14 @@ export default class HexChessBoard extends React.Component {
         selectedIndex: null,
         legalTargets: [],
       });
-      this.setLastmove(prevProps.ctx?.currentPlayer === '0' ? 'W' : 'B');
+    }
+    // Detect new move, update last move, play sound
+    const previousString = this.getLastMoveString(prevProps.G?.movesLog);
+    const currentString = this.getLastMoveString(this.props.G?.movesLog);
+    // TODO this does not work when one player has bulk placed
+    if (currentString !== previousString) {
+      this.setLastMove(prevProps.ctx?.currentPlayer === '0' ? 'W' : 'B');
+      sfx.play(soundForMove(currentString));
     }
   }
 
@@ -78,7 +93,7 @@ export default class HexChessBoard extends React.Component {
     const color = this.getCurrentColor();
     if (this.isSetupPhase()) {
       if (G.cells[id] == null && isBackRank(color, id)) {
-        this.setState({ setupTarget: id });
+        this.setState({ selectedIndex: id });
       }
       return;
     }
@@ -101,7 +116,6 @@ export default class HexChessBoard extends React.Component {
         selectedIndex: null,
         legalTargets: [],
       });
-      this.setLastmove(color);
       return;
     }
 
@@ -113,7 +127,7 @@ export default class HexChessBoard extends React.Component {
     if (!this.isSetupPhase()) return null;
     const color = this.getCurrentColor();
     const setupPool = this.props.G.setupPool[color];
-    const { setupTarget } = this.state;
+    const { selectedIndex } = this.state;
 
     const canBulkPlace = setupPool.length > 0;
 
@@ -121,18 +135,17 @@ export default class HexChessBoard extends React.Component {
       <div className="setup-panel">
         <div className="setup-hint">Setup: {color === 'W' ? 'White' : 'Black'}</div>
         <div className="setup-hint">
-          {setupTarget == null
+          {selectedIndex == null
             ? 'Click an empty back-rank hex'
-            : `Selected: ${setupTarget + 1}`}
+            : `Selected: ${selectedIndex + 1}`}
         </div>
         <div className="setup-pieces">
           {setupPool.map((pieceCode) => (
             <button
               key={pieceCode}
-              disabled={setupTarget == null}
+              disabled={selectedIndex == null}
               onClick={() => {
-                this.props.moves.placePiece(setupTarget, pieceCode);
-                this.setLastmove(color);
+                this.props.moves.placePiece(selectedIndex, pieceCode);
               }}
               title={pieceCode}
               className="setup-piece-btn"
@@ -141,7 +154,7 @@ export default class HexChessBoard extends React.Component {
                 <img
                   src={spriteOf(pieceCode)}
                   alt={pieceCode}
-                  disabled={setupTarget == null}
+                  disabled={selectedIndex == null}
                   width={50}
                   height={50}
                   style={{ pointerEvents: 'none' }}
@@ -157,7 +170,6 @@ export default class HexChessBoard extends React.Component {
             disabled={!canBulkPlace}
             onClick={() => {
               this.props.moves.placeAllFixed();
-              this.setLastmove(color);
             }}
             title="Place all remaining pieces in a fixed layout"
           >
@@ -167,7 +179,6 @@ export default class HexChessBoard extends React.Component {
             disabled={!canBulkPlace}
             onClick={() => {
               this.props.moves.placeAllRandom();
-              this.setLastmove(color);
             }}
             title="Place all remaining pieces randomly"
           >
@@ -185,6 +196,15 @@ export default class HexChessBoard extends React.Component {
 
     return (
       <aside className="side-panel">
+        <label className="mute-toggle">
+          <input
+            type="checkbox"
+            defaultChecked
+            onChange={(e) => sfx.setEnabled(e.target.checked)}
+            onClick={this.onAnyUserGesture}
+          />
+          Sounds
+        </label>
         <div className="turn-banner">
           <span>{playerLabel} to move</span>
         </div>
@@ -200,11 +220,6 @@ export default class HexChessBoard extends React.Component {
             {this.props.G.movesLog.map((row, index) => {
               const isWhiteActive = index === lastWhiteIndex && lastColor === 'W';
               const isBlackActive = index === lastBlackIndex && lastColor === 'B';
-              /*               console.log('\nlastColor ', lastColor);
-              console.log('lastWhiteIndex ', lastWhiteIndex);
-              console.log('isWhiteActive ', isWhiteActive);
-              console.log('lastBlackIndex ', lastBlackIndex);
-              console.log('isBlackActive ', isWhiteActive); */
               return (
                 <tr key={index}>
                   <td className="col-turn">{index + 1}</td>
@@ -246,7 +261,10 @@ export default class HexChessBoard extends React.Component {
         );
     }
 
-    const { selectedIndex, legalTargets, setupTarget } = this.state;
+    const { selectedIndex, legalTargets } = this.state;
+
+    const selectionColor =
+      this.getCurrentColor() === 'W' ? 'var(--selection-light)' : 'var(--selection-dark)';
 
     return (
       <div className="game-layout">
@@ -271,19 +289,13 @@ export default class HexChessBoard extends React.Component {
                 isBackRank(this.getCurrentColor(), id) &&
                 this.props.G.cells[id] == null;
 
-              const isSelected = selectedIndex === id;
               const isLegalMove = legalTargets.includes(id);
 
               return (
                 <g key={id} onClick={() => this.onHexClick(id)}>
                   {/* cell */}
                   <polygon
-                    className={[
-                      `cell-${colorIndex(id)}`,
-                      isSelected && 'selected',
-                      canPlaceHere && 'setup-target',
-                      setupTarget === id && 'setup-selected',
-                    ]
+                    className={[`cell-${colorIndex(id)}`, canPlaceHere && 'setup-target']
                       .filter(Boolean)
                       .join(' ')}
                     points={hexPointsFlat(x, y, size)}
@@ -331,6 +343,22 @@ export default class HexChessBoard extends React.Component {
                 </g>
               );
             })}
+
+            {/* Selection highlight */}
+            {selectedIndex != null && (
+              <polygon
+                className="selected"
+                points={hexPointsFlat(
+                  centers[selectedIndex].x,
+                  centers[selectedIndex].y,
+                  size
+                )}
+                style={{
+                  stroke: selectionColor,
+                  filter: `drop-shadow(0 0 5px ${selectionColor})`,
+                }}
+              />
+            )}
           </svg>
           {this.renderSetupPanel()}
           {matchResult}

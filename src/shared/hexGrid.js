@@ -113,11 +113,10 @@ function hexagonCube(R = 2) {
  * Creates a star-shaped grid of flat-topped hexagons. Starts with a basic hexagonal grid (radius R) 
  * and then adds a triangle of hexagons on each side
  *
- * @export
  * @param {number} [R=2] Hex radius (number of rings around the origin)
  * @returns {Array<[number, number]>} Array of flat-topped hexagon coordinates [q, r]
  */
-export function createHexagram(R = 2) {
+function createHexagram(R = 2) {
   const base = hexagonCube(R);
   const out = new Map(base.map((c) => [cubeKey(c), c])); // dedupe
 
@@ -163,7 +162,7 @@ export const GRID = createHexagram(2);
  * Keys are stringified axial coords, values are 0-based indices.
  * @type {Map<string, number>}
  */
-export const IDX_BY_QR = new Map(GRID.map((c, i) => [`${c.q},${c.r}`, i]));
+const IDX_BY_QR = new Map(GRID.map((c, i) => [`${c.q},${c.r}`, i]));
 
 /**
  * Convert axial coords to a GRID index (or `null` if off-board).
@@ -173,6 +172,6 @@ export const IDX_BY_QR = new Map(GRID.map((c, i) => [`${c.q},${c.r}`, i]));
  * @returns {number|null}
  */
 export const getIndexOf = (q, r) => {
-  const v = IDX_BY_QR.get(`${q},${r}`);
-  return v === undefined ? null : v;
+  const index = IDX_BY_QR.get(`${q},${r}`);
+  return index === undefined ? null : index;
 };
