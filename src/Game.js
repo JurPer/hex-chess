@@ -20,8 +20,6 @@ import {
  */
 const colorToMove = (ctx) => (ctx.currentPlayer === '0' ? 'W' : 'B');
 
-
-
 /**
  * Turns a move into a string for the moves log.
  *
@@ -143,8 +141,11 @@ function placeAll(G, color, random) {
   if (emptyBackRankCells.length === 0) return INVALID_MOVE;
 
   // if the RandomAPI is provided, shuffle the remaining pool before placing pieces
-  const remainingPool = random != null ? random.Shuffle(setupPool.slice())
-    : SETUP_POOL[color].filter((code) => setupPool.includes(code));
+  let remainingPool = [];
+  if (random) {
+    // make sure the king is put in
+    remainingPool = random.Shuffle(setupPool.slice())
+  } else remainingPool = SETUP_POOL[color].filter((code) => setupPool.includes(code));
 
   const n = Math.min(emptyBackRankCells.length, remainingPool.length);
   for (let k = 0; k < n; k++) {

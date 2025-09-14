@@ -66,14 +66,7 @@ export default class HexChessBoard extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    // Clear setup target when the pool changes (placement done)
-    if (
-      prevProps.G?.setupPool !== this.props.G?.setupPool &&
-      this.state.selectedIndex != null
-    ) {
-      this.setState({ selectedIndex: null });
-    }
-    // Clear selection on phase change / turn change if you like
+    // Clear selection on phase change / turn change
     if (
       prevProps.ctx?.phase !== this.props.ctx?.phase ||
       prevProps.ctx?.currentPlayer !== this.props.ctx?.currentPlayer
@@ -89,6 +82,10 @@ export default class HexChessBoard extends React.Component {
       const { index, color, move } = change;
       this.setState({ lastIndex: index, lastColor: color });
       sfx.play(soundForMove(move));
+      requestAnimationFrame(() => {
+        const elem = this.moveWrap;
+        if (elem) elem.scrollTop = elem.scrollHeight;
+      });
     }
   }
 
@@ -202,6 +199,7 @@ export default class HexChessBoard extends React.Component {
     const color = this.getCurrentColor();
     const playerLabel = color === 'W' ? 'White' : 'Black';
     const { lastColor, lastIndex } = this.state;
+    const movesLog = this.props.G.movesLog;
 
     return (
       <aside className="side-panel">
@@ -217,31 +215,33 @@ export default class HexChessBoard extends React.Component {
         <div className="turn-banner">
           <span>{playerLabel} to move</span>
         </div>
-        <table className="move-table">
-          <thead>
-            <tr>
-              <th className="col-turn">Turn</th>
-              <th>White</th>
-              <th>Black</th>
-            </tr>
-          </thead>
-          <tbody>
-            {this.props.G.movesLog.map((row, index) => {
-              const isActive = index === lastIndex;
-              return (
-                <tr key={index}>
-                  <td className="col-turn">{index + 1}</td>
-                  <td className={`mv ${isActive && lastColor === 'W' ? 'active' : ''}`}>
-                    {row.W}
-                  </td>
-                  <td className={`mv ${isActive && lastColor === 'B' ? 'active' : ''}`}>
-                    {row.B}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="move-table-wrap" ref={(elem) => (this.moveWrap = elem)}>
+          <table className="move-table">
+            <thead>
+              <tr>
+                <th className="col-turn">Turn</th>
+                <th>White</th>
+                <th>Black</th>
+              </tr>
+            </thead>
+            <tbody>
+              {movesLog.map((row, index) => {
+                const isActive = index === lastIndex;
+                return (
+                  <tr key={index}>
+                    <td className="col-turn">{index + 1}</td>
+                    <td className={`mv ${isActive && lastColor === 'W' ? 'active' : ''}`}>
+                      {row.W}
+                    </td>
+                    <td className={`mv ${isActive && lastColor === 'B' ? 'active' : ''}`}>
+                      {row.B}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </aside>
     );
   }

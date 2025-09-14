@@ -6,7 +6,7 @@
 
 .board {
   font-family: monospace;
-  padding-left: 2%;
+  margin-left: 2%;
 }
 .board polygon {
   stroke: var(--secondary-color);
@@ -102,17 +102,16 @@
   color: var(--font-light);
   border-radius: 10px;
   padding: 10px;
+  margin-top: 10px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   font-family: system-ui, sans-serif;
 }
-
 .mute-toggle {
   display: flex;
   align-items: center;
   gap: 6;
   margin: 6px 0 10px;
 }
-
 .turn-banner {
   display: flex;
   align-items: center;
@@ -123,18 +122,34 @@
   margin-bottom: 8px;
   font-weight: 600;
 }
+.move-table-wrap {
+  max-height: 300px;
+  overflow: auto;
+  border-radius: 6px;
+}
 .move-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
 .move-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--secondary-color);
   text-align: left;
   font-weight: 600;
   font-size: 12px;
   color: var(--font-light);
   filter: brightness(70%);
   padding: 4px 6px;
+}
+.move-table-wrap::-webkit-scrollbar {
+  width: 10px;
+}
+.move-table-wrap::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 6px;
 }
 .move-table .col-turn {
   width: 32px;
@@ -145,11 +160,11 @@
   padding: 4px 6px;
 }
 .move-table tbody tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--secondary-color), var(--primary-color) 20%);
 }
 .mv.active {
   background: var(--primary-color);
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 .match-result {
