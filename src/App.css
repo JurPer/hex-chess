@@ -4,6 +4,8 @@ body,
   height: 100%;
 }
 
+/* Palette from https://lospec.com/palette-list/eerie-blurple-9 */
+
 :root {
   --primary-color: #49536a;
   --secondary-color: #1f1f24;

@@ -162,7 +162,7 @@ export const GRID = createHexagram(2);
  * Keys are stringified axial coords, values are 0-based indices.
  * @type {Map<string, number>}
  */
-const IDX_BY_QR = new Map(GRID.map((c, i) => [`${c.q},${c.r}`, i]));
+export const IDX_BY_QR = new Map(GRID.map((c, i) => [`${c.q},${c.r}`, i]));
 
 /**
  * Convert axial coords to a GRID index (or `null` if off-board).

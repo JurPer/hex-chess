@@ -1,3 +1,7 @@
+/**
+ * @typedef {'W'|'B'} Color
+ */
+
 import React from 'react';
 import './board.css';
 import { axialToPixelFlat, hexPointsFlat, GRID } from './shared/hexGrid';
@@ -5,7 +9,35 @@ import { legalMovesFromCells, isBackRank, colorOf, glyphOf } from './shared/rule
 import { spriteOf } from './sprites';
 import { sfx, soundForMove } from './sfx';
 
+/**
+ * Calculates a color index based on the axial coordinates of a cell.
+ * The color index is used for alternating colors on the board.
+ *
+ * @param {number} index of cell
+ * @returns {number} 0, 1, 2
+ */
 const colorIndex = (i) => (((GRID[i].q - GRID[i].r) % 3) + 3) % 3;
+
+/**
+ * Find the last cell that changed between two move logs.
+ * Each row is { W: string|null, B: string|null }.
+ * Returns { row, color, prev, value } or null if no change.
+ *
+ * @param {{}} [prevLog=[]]
+ * @param {{}} [currLog=[]]
+ * @returns {{ index: number; color: Color; move: string|null }}
+ */
+function getDiffMovesLogs(prevLog = [], currLog = []) {
+  const length = Math.max(prevLog.length, currLog.length);
+  for (let i = length - 1; i >= 0; i--) {
+    const prevRow = prevLog[i] ?? { W: null, B: null };
+    const currRow = currLog[i] ?? { W: null, B: null };
+    // Check B first so a new Black move at the end is preferred.
+    if (prevRow.B !== currRow.B) return { index: i, color: 'B', move: currRow.B ?? null };
+    if (prevRow.W !== currRow.W) return { index: i, color: 'W', move: currRow.W ?? null };
+  }
+  return null;
+}
 
 /**
  * Handles the UI for the Hex Chess game.
@@ -19,8 +51,7 @@ export default class HexChessBoard extends React.Component {
     selectedIndex: null,
     legalTargets: [],
     lastColor: null,
-    lastWhiteIndex: null,
-    lastBlackIndex: null,
+    lastIndex: null,
   };
 
   /* ****** Helpers ****** */
@@ -32,27 +63,6 @@ export default class HexChessBoard extends React.Component {
 
   getCurrentColor() {
     return this.props.ctx?.currentPlayer === '0' ? 'W' : 'B';
-  }
-
-  getLastMoveString(movesLog) {
-    for (let i = movesLog.length - 1; i >= 0; i--) {
-      const row = movesLog[i];
-      if (row?.B) return row.B;
-      if (row?.W) return row.W;
-    }
-    return null;
-  }
-
-  setLastMove(color) {
-    const movesLog = this.props.G.movesLog;
-    const index = movesLog.findLastIndex((row) => row?.[color] != null);
-
-    this.setState({ lastColor: color });
-    if (color === 'W') {
-      this.setState({ lastWhiteIndex: index });
-    } else {
-      this.setState({ lastBlackIndex: index });
-    }
   }
 
   componentDidUpdate(prevProps) {
@@ -74,12 +84,11 @@ export default class HexChessBoard extends React.Component {
       });
     }
     // Detect new move, update last move, play sound
-    const previousString = this.getLastMoveString(prevProps.G?.movesLog);
-    const currentString = this.getLastMoveString(this.props.G?.movesLog);
-    // TODO this does not work when one player has bulk placed
-    if (currentString !== previousString) {
-      this.setLastMove(prevProps.ctx?.currentPlayer === '0' ? 'W' : 'B');
-      sfx.play(soundForMove(currentString));
+    const change = getDiffMovesLogs(prevProps.G?.movesLog, this.props.G?.movesLog);
+    if (change) {
+      const { index, color, move } = change;
+      this.setState({ lastIndex: index, lastColor: color });
+      sfx.play(soundForMove(move));
     }
   }
 
@@ -192,7 +201,7 @@ export default class HexChessBoard extends React.Component {
   renderSidePanel() {
     const color = this.getCurrentColor();
     const playerLabel = color === 'W' ? 'White' : 'Black';
-    const { lastColor, lastWhiteIndex, lastBlackIndex } = this.state;
+    const { lastColor, lastIndex } = this.state;
 
     return (
       <aside className="side-panel">
@@ -218,13 +227,16 @@ export default class HexChessBoard extends React.Component {
           </thead>
           <tbody>
             {this.props.G.movesLog.map((row, index) => {
-              const isWhiteActive = index === lastWhiteIndex && lastColor === 'W';
-              const isBlackActive = index === lastBlackIndex && lastColor === 'B';
+              const isActive = index === lastIndex;
               return (
                 <tr key={index}>
                   <td className="col-turn">{index + 1}</td>
-                  <td className={`mv ${isWhiteActive ? 'active' : ''}`}>{row.W}</td>
-                  <td className={`mv ${isBlackActive ? 'active' : ''}`}>{row.B}</td>
+                  <td className={`mv ${isActive && lastColor === 'W' ? 'active' : ''}`}>
+                    {row.W}
+                  </td>
+                  <td className={`mv ${isActive && lastColor === 'B' ? 'active' : ''}`}>
+                    {row.B}
+                  </td>
                 </tr>
               );
             })}
