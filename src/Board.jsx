@@ -5,7 +5,7 @@
 import React from 'react';
 import './board.css';
 import { axialToPixelFlat, hexPointsFlat, GRID } from './shared/hexGrid';
-import { legalMovesFromCells, isBackRank, colorOf, glyphOf } from './shared/rules';
+import { legalMovesFromCells, isBackRank, colorOf, glyphOf, kindOf } from './shared/rules';
 import { spriteOf } from './sprites';
 import { sfx, soundForMove } from './sfx';
 
@@ -292,7 +292,17 @@ export default class HexChessBoard extends React.Component {
               </filter>
             </defs>
             {centers.map(({ x, y }, id) => {
-              const pieceCode = this.props.G?.cells?.[id] ?? null;
+              let pieceCode = this.props.G?.cells?.[id] ?? null;
+
+              // check if pieceCode is enemy fool: if true, swap with knight's code
+              if (
+                pieceCode &&
+                colorOf(pieceCode) !== this.getCurrentColor() &&
+                kindOf(pieceCode) === 'fool'
+              ) {
+                pieceCode = colorOf(pieceCode) + 'N';
+              }
+
               const sprite = pieceCode && spriteOf(pieceCode);
               const spriteSize = 1.3 * size;
 

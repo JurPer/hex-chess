@@ -2,7 +2,7 @@
  * @typedef {'W'|'B'} Color
  * @typedef {{color: Color, glyph: string, kind: string}} Piece
  * @typedef {(string|null)[]} Cells
- * @typedef {'WR'|'WN'|'WB'|'WQ'|'WK'|'WC'|'BR'|'BN'|'BB'|'BQ'|'BK'|'BC'} PieceCode
+ * @typedef {'WR'|'WN'|'WB'|'WQ'|'WK'|'WC'|'WD'|'WG'|'WF'|'WM'|'BR'|'BN'|'BB'|'BQ'|'BK'|'BC'|'BD'|'BG'|'BF'|'BM'} PieceCode
  * @typedef {{cells: Cells, setupPool?: Record<Color, string[]>, [k: string]: any}} GameState
  * @typedef {{currentPlayer: '0'|'1', phase?: string, [k: string]: any}} Ctx
  */
@@ -119,21 +119,31 @@ function applyPlay(G, from, to) {
   const movedPieceCode = G.cells[from];
   const targetCode = G.cells[to];
 
-  // check special case for dragon moves
-  if (kindOf(movedPieceCode) === 'dragon' && targetCode) {
-    const collateralIndex = dragonCollateral(from, to);
-    if (collateralIndex) G.cells[collateralIndex] = null;
-  }
-
   // apply the move
   G.cells[to] = movedPieceCode;
   G.cells[from] = null;
+
+  // check special case for dragon moves
+  if (kindOf(movedPieceCode) === 'dragon' && targetCode) {
+    const collateralIndex = dragonCollateral(from, to);
+    if (collateralIndex) {
+      const collateralCode = G.cells[collateralIndex];
+      // if the collateral was a fool, the dragon is also removed
+      if (collateralCode && kindOf(collateralCode) === 'fool')
+        G.cells[to] = null;
+      G.cells[collateralIndex] = null;
+    }
+  }
 
   // check special case for guardian moves
   if (kindOf(movedPieceCode) === 'guardian' &&
     targetCode && !isEnemy(movedPieceCode, targetCode)) {
     G.cells[from] = targetCode;
   }
+
+  // check special case for capturing the fool
+  if (targetCode && kindOf(targetCode) === 'fool' && isEnemy(movedPieceCode, targetCode))
+    G.cells[to] = null;
 
   // check pawn promotion if applicable; auto-queen for now
   let promoted = false;

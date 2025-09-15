@@ -1,8 +1,8 @@
 /**
  * @typedef {'W'|'B'} Color
- * @typedef {{color: Color, glyph: string}} Piece
+ * @typedef {{color: Color, glyph: string, kind: string}} Piece
  * @typedef {(string|null)[]} Cells
- * @typedef {'WR'|'WN'|'WB'|'WQ'|'WK'|'WC'|'BR'|'BN'|'BB'|'BQ'|'BK'|'BC'} PieceCode
+ * @typedef {'WR'|'WN'|'WB'|'WQ'|'WK'|'WC'|'WD'|'WG'|'WF'|'WM'|'BR'|'BN'|'BB'|'BQ'|'BK'|'BC'|'BD'|'BG'|'BF'|'BM'} PieceCode
  */
 
 import { GRID, AXIAL_DIRS, getIndexOf } from './hexGrid.js';
@@ -36,6 +36,19 @@ const PIECES = {
   WM: { color: 'W', glyph: '🌖', kind: 'moon' },
   BM: { color: 'B', glyph: '🌒', kind: 'moon' },
 };
+
+/**
+ * Setup pool for White and Black (piece codes placed during Setup phase).
+ * - When placing one by one, the order is determined by the player
+ * - When placing all at once, this fixed order is used
+ * - When placing all at random, a random order is used
+ *
+ * @type {PieceCode[]}
+ */
+export const SETUP_POOL = Object.freeze({
+  W: Object.freeze(['WK', 'WC', 'WD', 'WG', 'WF', 'WN', 'WB', 'WQ', 'WR']),
+  B: Object.freeze(['BK', 'BC', 'BD', 'BG', 'BF', 'BN', 'BB', 'BQ', 'BR']),
+});
 
 /**
  * Returns the color of the piece with the specified `code`
@@ -108,19 +121,6 @@ export const PAWN_START = {
  * @type {{W:number[], B:number[]}}
  */
 const PAWN_CAPTURE_DIRS = { W: [1, 5], B: [2, 4] };
-
-/**
- * Setup pool for White and Black (piece codes placed during Setup phase).
- * - When placing one by one, the order is determined by the player
- * - When placing all at once, this fixed order is used
- * - When placing all at random, a random order is used
- *
- * @type {PieceCode[]}
- */
-export const SETUP_POOL = Object.freeze({
-  W: Object.freeze(['WK', 'WN', 'WB', 'WQ', 'WR', 'WC', 'WD', 'WG']),
-  B: Object.freeze(['BK', 'BN', 'BB', 'BQ', 'BR', 'BC', 'BD', 'BG']),
-});
 
 /**
  * Predicate: Is cell at `index` on the back rank for `color`?
@@ -210,6 +210,7 @@ export function legalMovesFromCells(cells, index) {
     case 'charger': return chargerMoves(cells, index);
     case 'dragon': return dragonMoves(cells, index);
     case 'guardian': return guardianMoves(cells, index);
+    case 'fool': return foolMoves(cells, index);
   }
 
   return [];
@@ -421,6 +422,10 @@ function guardianMoves(cells, index) {
   return legalMoves;
 }
 
+function foolMoves(cells, index) {
+  return knightMoves(cells, index);
+}
+
 
 /* ****** AI Helper ****** */
 
@@ -437,20 +442,31 @@ export function nextStateCells(cells, from, to) {
   const movedPieceCode = cells[from];
   const targetCode = cells[to];
 
+  // apply the move
+  nextCells[to] = cells[from];
+  nextCells[from] = null;
+
   // check special case for dragon moves
   if (kindOf(movedPieceCode) === 'dragon' && targetCode) {
     const collateralIndex = dragonCollateral(from, to);
-    if (collateralIndex) nextCells[collateralIndex] = null;
+    if (collateralIndex) {
+      const collateralCode = nextCells[collateralIndex];
+      // if the collateral was a fool, the dragon is also removed
+      if (collateralCode && kindOf(collateralCode) === 'fool')
+        nextCells[to] = null;
+      nextCells[collateralIndex] = null;
+    }
   }
-
-  nextCells[to] = cells[from];
-  nextCells[from] = null;
 
   // check special case for guardian moves
   if (kindOf(movedPieceCode) === 'guardian' &&
     targetCode && !isEnemy(movedPieceCode, targetCode)) {
     nextCells[from] = targetCode;
   }
+
+  // check special case for capturing the fool
+  if (targetCode && kindOf(targetCode) === 'fool')
+    nextCells[to] = null;
 
   return nextCells;
 }
@@ -480,6 +496,7 @@ export function isKingAttacked(cells, kingColor) {
   let kingIndex = getKingIndex(cells, kingColor);
   if (kingIndex < 0) return true;
   const kingCode = cells[kingIndex];
+  let kinds = [];
 
   // 1) Pawn attacks (symmetric from king square)
   for (const direction of PAWN_CAPTURE_DIRS[kingColor]) {
@@ -490,9 +507,10 @@ export function isKingAttacked(cells, kingColor) {
     }
   }
   // 2) Knight attacks (L-jumps are symmetrical)
+  kinds = ['knight', 'fool'];
   for (const source of knightMoves(cells, kingIndex)) {
     const pieceCode = cells[source];
-    if (pieceCode && isEnemy(kingCode, pieceCode) && (kindOf(pieceCode) === 'knight')) {
+    if (pieceCode && isEnemy(kingCode, pieceCode) && kinds.includes(kindOf(pieceCode))) {
       return true;
     }
   }
@@ -524,7 +542,7 @@ export function isKingAttacked(cells, kingColor) {
   }
 
   // 4) King, Dragon or Guardian attacks
-  const kinds = ['king', 'dragon', 'guardian'];
+  kinds = ['king', 'dragon', 'guardian'];
   for (let direction = 0; direction < 6; direction++) {
     const oneStep = stepInDirection(kingIndex, direction, 1);
     if (oneStep === null) continue;

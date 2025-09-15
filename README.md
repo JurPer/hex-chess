@@ -87,6 +87,11 @@ All moves follow the hexagrams orthogonal directions.
 - Moves one step in any orthogonal direction.
 - Can swap places with a friendly piece.
 
+### Fool
+
+- Moves like the Knight and looks like it to the opponent.
+- When captured, also removes the piece that captured it.
+
 ## Running locally
 
 1. Install
