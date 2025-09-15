@@ -231,10 +231,10 @@ export default class HexChessBoard extends React.Component {
                   <tr key={index}>
                     <td className="col-turn">{index + 1}</td>
                     <td className={`mv ${isActive && lastColor === 'W' ? 'active' : ''}`}>
-                      {row.W}
+                      {color === 'W' ? row.W : row.W.replace('F', 'N')}
                     </td>
                     <td className={`mv ${isActive && lastColor === 'B' ? 'active' : ''}`}>
-                      {row.B}
+                      {color === 'B' ? row.B : row.B.replace('F', 'N')}
                     </td>
                   </tr>
                 );
