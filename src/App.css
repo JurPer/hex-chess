@@ -25,6 +25,7 @@ body {
 
 .app {
   font-size: 64px;
+  margin-top: 2%;
   color: var(--font-light);
   text-align: center;
 }

@@ -10,8 +10,9 @@
 import { INVALID_MOVE, TurnOrder } from 'boardgame.io/dist/cjs/core.js';
 import {
   PAWN_START, SETUP_POOL, BACK_RANK,
-  isBackRank, legalMovesFromCells, nextStateCells, isKingAttacked, colorOf
-} from "./shared/rules.js";
+  isBackRank, legalMovesFromCells, nextStateCells, isKingAttacked, colorOf, kindOf, isEnemy,
+  dragonCollateral,
+} from './shared/rules.js';
 
 /**
  * Current side to move → `'W'` for player 0, `'B'` for player 1.
@@ -22,18 +23,26 @@ const colorToMove = (ctx) => (ctx.currentPlayer === '0' ? 'W' : 'B');
 
 /**
  * Turns a move into a string for the moves log.
+ * `'S: '` for the setup. `'x'` for captures. `'o'` for guardian swap. `'=Q'` for promotion.
  *
  * @param {number} [from=null] 
  * @param {PieceCode} pieceCode 
  * @param {number} to 
- * @param {boolean} [captured=false] 
+ * @param {PieceCode} [targetCode=null] 
  * @param {boolean} [promoted=false] 
  * @returns {string} 
  */
-function moveToString(from = null, pieceCode, to, captured = false, promoted = false) {
+function moveToString(from = null, pieceCode, to, targetCode = null, promoted = false) {
   let moveString = '';
   moveString += (from !== null ? (from + 1) : 'S: ');
-  moveString += pieceCode.slice(1) + (captured ? 'x' : '') + (to + 1) + (promoted ? '=Q' : '');
+  moveString += pieceCode.slice(1);
+  if (targetCode)
+    if (!isEnemy(pieceCode, targetCode))
+      moveString += '🗘';
+    else moveString += 'x';
+  moveString += (to + 1);
+  moveString += promoted ? '=Q' : '';
+  moveString += kindOf(targetCode) === 'king' ? '#' : '';
   return moveString;
 }
 
@@ -45,10 +54,10 @@ function moveToString(from = null, pieceCode, to, captured = false, promoted = f
  * @param {number} [from=null] 
  * @param {PieceCode} pieceCode 
  * @param {number} to 
- * @param {boolean} [captured=false] 
+ * @param {PieceCode} [targetCode=null] 
  * @param {boolean} [promoted=false] 
  */
-function logMove(G, color, from = null, pieceCode, to, captured = false, promoted = false) {
+function logMove(G, color, from = null, pieceCode, to, targetCode = null, promoted = false) {
   let index = 0;
   let foundGap = false;
   for (index; index < G.movesLog.length; index++) {
@@ -57,7 +66,7 @@ function logMove(G, color, from = null, pieceCode, to, captured = false, promote
       break;
     }
   }
-  const moveString = moveToString(from, pieceCode, to, captured, promoted)
+  const moveString = moveToString(from, pieceCode, to, targetCode, promoted)
   if (foundGap) {
     G.movesLog[index][color] = moveString;
   } else {
@@ -108,21 +117,35 @@ function isLegalPlay(G, ctx, from, to) {
  */
 function applyPlay(G, from, to) {
   const movedPieceCode = G.cells[from];
-  const captured = G.cells[to] != null;
+  const targetCode = G.cells[to];
+
+  // check special case for dragon moves
+  if (kindOf(movedPieceCode) === 'dragon' && targetCode) {
+    const collateralIndex = dragonCollateral(from, to);
+    if (collateralIndex) G.cells[collateralIndex] = null;
+  }
+
+  // apply the move
   G.cells[to] = movedPieceCode;
   G.cells[from] = null;
 
-  let promoted = false;
+  // check special case for guardian moves
+  if (kindOf(movedPieceCode) === 'guardian' &&
+    targetCode && !isEnemy(movedPieceCode, targetCode)) {
+    G.cells[from] = targetCode;
+  }
+
   // check pawn promotion if applicable; auto-queen for now
-  if (movedPieceCode === 'WP' && isBackRank("B", to)) {
+  let promoted = false;
+  if (movedPieceCode === 'WP' && isBackRank('B', to)) {
     G.cells[to] = 'WQ';
     promoted = true;
-  } else if (movedPieceCode === 'BP' && isBackRank("W", to)) {
+  } else if (movedPieceCode === 'BP' && isBackRank('W', to)) {
     G.cells[to] = 'BQ';
     promoted = true;
   }
 
-  logMove(G, colorOf(movedPieceCode), from, movedPieceCode, to, captured, promoted);
+  logMove(G, colorOf(movedPieceCode), from, movedPieceCode, to, targetCode, promoted);
 }
 
 
@@ -158,7 +181,7 @@ function placeAll(G, color, random) {
     const toIndex = emptyBackRankCells[k];
     const pieceCode = remainingPool[k];
     G.cells[toIndex] = pieceCode;
-    logMove(G, color, null, pieceCode, toIndex, false, false);
+    logMove(G, color, null, pieceCode, toIndex, null, false);
     const j = setupPool.indexOf(pieceCode);
     if (j >= 0) setupPool.splice(j, 1);
   }
@@ -213,20 +236,20 @@ function pieceLegalMoves(G, index) {
  * @type {import('boardgame.io').Game<GameState>}
  */
 export const HexChess = {
-  name: "hex-chess",
+  name: 'hex-chess',
 
   setup: () => {
     const cells = Array(37).fill(null);
 
     // Setup the pawns
-    PAWN_START["W"].forEach((n) => (cells[n] = 'WP'));
-    PAWN_START["B"].forEach((n) => (cells[n] = 'BP'));
+    PAWN_START['W'].forEach((n) => (cells[n] = 'WP'));
+    PAWN_START['B'].forEach((n) => (cells[n] = 'BP'));
 
-    const setupPool = { W: [...SETUP_POOL["W"]], B: [...SETUP_POOL["B"]] };
+    const setupPool = { W: [...SETUP_POOL['W']], B: [...SETUP_POOL['B']] };
 
     return {
       cells,
-      phase: "setup",
+      phase: 'setup',
       setupPool,
       movesLog: [],
     };
@@ -255,7 +278,7 @@ export const HexChess = {
         const isFullB = BACK_RANK.B.every(i => G.cells[i] !== null);
         return isFullW && isFullB;
       },
-      next: "play",
+      next: 'play',
       moves: {
         // place one non-pawn piece on your back rank
         placePiece: ({ G, ctx }, toIndex, pieceCode) => {
@@ -269,7 +292,7 @@ export const HexChess = {
 
           // Place
           G.cells[toIndex] = pieceCode;
-          logMove(G, color, null, pieceCode, toIndex, false, false);
+          logMove(G, color, null, pieceCode, toIndex, null, false);
           // Remove from pool
           const index = G.setupPool[color].indexOf(pieceCode);
           if (index >= 0) G.setupPool[color].splice(index, 1);
@@ -309,7 +332,7 @@ export const HexChess = {
   },
 
   endIf: ({ G, ctx }) => {
-    if (ctx.phase === "setup") return;
+    if (ctx.phase === 'setup') return;
 
     // 1) King captured?
     const whiteKingAlive = G.cells.some(c => c && c === 'WK');

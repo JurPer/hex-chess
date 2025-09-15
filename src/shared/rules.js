@@ -27,6 +27,14 @@ const PIECES = {
   BQ: { color: 'B', glyph: '♛', kind: 'queen' },
   WC: { color: 'W', glyph: '♤', kind: 'charger' },
   BC: { color: 'B', glyph: '♠', kind: 'charger' },
+  WD: { color: 'W', glyph: '🐲', kind: 'dragon' },
+  BD: { color: 'B', glyph: '🐲', kind: 'dragon' },
+  WG: { color: 'W', glyph: '♡', kind: 'guardian' },
+  BG: { color: 'B', glyph: '♥', kind: 'guardian' },
+  WF: { color: 'W', glyph: '♧', kind: 'fool' },
+  BF: { color: 'B', glyph: '♣', kind: 'fool' },
+  WM: { color: 'W', glyph: '🌖', kind: 'moon' },
+  BM: { color: 'B', glyph: '🌒', kind: 'moon' },
 };
 
 /**
@@ -51,16 +59,16 @@ export const glyphOf = (code) => (PIECES[code] ? PIECES[code].glyph : null);
  * @param {string} code 
  * @returns {string|null} 'pawn' | 'king' | ... | null
  */
-const kindOf = (code) => (PIECES[code] ? PIECES[code].kind : null);
+export const kindOf = (code) => (PIECES[code] ? PIECES[code].kind : null);
 
 /**
  * Checks if the pieces with codes `a` and `b` are enemies
  * 
  * @param {string} a 
  * @param {string} b 
- * @returns 
+ * @returns {boolean}
  */
-const isEnemy = (a, b) => a && b && a[0] !== b[0];
+export const isEnemy = (a, b) => a && b && PIECES[a].color !== PIECES[b].color;
 
 /**
  * Back-rank cell indices for placement/promotion by color.
@@ -110,8 +118,8 @@ const PAWN_CAPTURE_DIRS = { W: [1, 5], B: [2, 4] };
  * @type {PieceCode[]}
  */
 export const SETUP_POOL = Object.freeze({
-  W: Object.freeze(['WK', 'WN', 'WB', 'WQ', 'WR', 'WC']),
-  B: Object.freeze(['BK', 'BN', 'BB', 'BQ', 'BR', 'BC']),
+  W: Object.freeze(['WK', 'WN', 'WB', 'WQ', 'WR', 'WC', 'WD', 'WG']),
+  B: Object.freeze(['BK', 'BN', 'BB', 'BQ', 'BR', 'BC', 'BD', 'BG']),
 });
 
 /**
@@ -166,13 +174,13 @@ function slide(cells, from, direction) {
     const next = stepInDirection(current, direction, 1);
     if (next === null) break;
 
-    const occupiedCode = cells[next];
-    if (occupiedCode === null) { // empty: can continue
+    const targetCode = cells[next];
+    if (targetCode === null) { // empty: can continue
       legalMoves.push(next);
       current = next;
       continue;
     }
-    if (isEnemy(pieceCode, occupiedCode)) { // first enemy: capture and stop
+    if (isEnemy(pieceCode, targetCode)) { // first enemy: capture and stop
       legalMoves.push(next);
     }
     break; // own piece or enemy — stop the slide / ray
@@ -200,6 +208,8 @@ export function legalMovesFromCells(cells, index) {
     case 'bishop': return bishopMoves(cells, index);
     case 'queen': return queenMoves(cells, index);
     case 'charger': return chargerMoves(cells, index);
+    case 'dragon': return dragonMoves(cells, index);
+    case 'guardian': return guardianMoves(cells, index);
   }
 
   return [];
@@ -243,8 +253,8 @@ function pawnMoves(cells, index) {
   for (const direction of captureDirection) {
     const target = stepInDirection(index, direction, 1);
     if (target != null) {
-      const occupiedCode = cells[target];
-      if (occupiedCode && isEnemy(pieceCode, occupiedCode)) legalMoves.push(target);
+      const targetCode = cells[target];
+      if (targetCode && isEnemy(pieceCode, targetCode)) legalMoves.push(target);
     }
   }
   return legalMoves;
@@ -260,11 +270,11 @@ function kingMoves(cells, index) {
   const pieceCode = cells[index];
   if (!pieceCode) return [];
   const legalMoves = [];
-  for (let dirIdx = 0; dirIdx < 6; dirIdx++) {
-    const target = stepInDirection(index, dirIdx, 1);
+  for (let direction = 0; direction < 6; direction++) {
+    const target = stepInDirection(index, direction, 1);
     if (target === null) continue;
-    const occupiedCode = cells[target];
-    if (occupiedCode === null || isEnemy(pieceCode, occupiedCode)) legalMoves.push(target);
+    const targetCode = cells[target];
+    if (targetCode === null || isEnemy(pieceCode, targetCode)) legalMoves.push(target);
   }
   return legalMoves;
 }
@@ -291,8 +301,8 @@ function knightMoves(cells, index) {
 
     for (const target of [left, right]) {
       if (target != null) {
-        const occupiedCode = cells[target];
-        if (!occupiedCode || isEnemy(pieceCode, occupiedCode)) legalMoves.add(target);
+        const targetCode = cells[target];
+        if (!targetCode || isEnemy(pieceCode, targetCode)) legalMoves.add(target);
       }
     }
   }
@@ -355,6 +365,61 @@ function chargerMoves(cells, index) {
   return directions.flatMap(d => slide(cells, index, d));
 }
 
+/**
+ * Dragon moves: one or two steps in any orthogonal direction; 
+ * when moving two steps to capture an enemy piece, ANY intermediate piece is also captured.
+ * @param {Cells} cells
+ * @param {number} index
+ * @returns {number[]}
+ */
+function dragonMoves(cells, index) {
+  const pieceCode = cells[index];
+  const stepCount = 2;
+  if (!pieceCode) return [];
+  const legalMoves = [];
+  for (let direction = 0; direction < 6; direction++) {
+    for (let i = 1; i <= stepCount; i++) {
+      const step = stepInDirection(index, direction, i);
+      if (step === null) continue;
+      let targetCode = cells[step];
+      if (targetCode === null || isEnemy(pieceCode, targetCode)) legalMoves.push(step);
+    }
+  }
+  return legalMoves;
+}
+
+/**
+ * Checks if the dragon moved two steps and returns the index of the intermediate cell.
+ * @param {number} from 
+ * @param {number} to 
+ * @returns {number|null} 
+ */
+export function dragonCollateral(from, to) {
+  for (let direction = 0; direction < 6; direction++) {
+    const twoSteps = stepInDirection(from, direction, 2);
+    if (twoSteps !== to) continue;
+    return stepInDirection(from, direction, 1);
+  }
+  return null;
+}
+
+/**
+ * Guardian moves: one step in any orthogonal direction. Can swap places with a friendly piece.
+ * @param {Cells} cells
+ * @param {number} index
+ * @returns {number[]}
+ */
+function guardianMoves(cells, index) {
+  const pieceCode = cells[index];
+  if (!pieceCode) return [];
+  const legalMoves = [];
+  for (let direction = 0; direction < 6; direction++) {
+    const target = stepInDirection(index, direction, 1);
+    if (target === null) continue;
+    legalMoves.push(target);
+  }
+  return legalMoves;
+}
 
 
 /* ****** AI Helper ****** */
@@ -369,8 +434,24 @@ function chargerMoves(cells, index) {
  */
 export function nextStateCells(cells, from, to) {
   const nextCells = cells.slice();
+  const movedPieceCode = cells[from];
+  const targetCode = cells[to];
+
+  // check special case for dragon moves
+  if (kindOf(movedPieceCode) === 'dragon' && targetCode) {
+    const collateralIndex = dragonCollateral(from, to);
+    if (collateralIndex) nextCells[collateralIndex] = null;
+  }
+
   nextCells[to] = cells[from];
   nextCells[from] = null;
+
+  // check special case for guardian moves
+  if (kindOf(movedPieceCode) === 'guardian' &&
+    targetCode && !isEnemy(movedPieceCode, targetCode)) {
+    nextCells[from] = targetCode;
+  }
+
   return nextCells;
 }
 
@@ -442,11 +523,19 @@ export function isKingAttacked(cells, kingColor) {
     return true;
   }
 
-  // 4) Adjacent opposing king
+  // 4) King, Dragon or Guardian attacks
+  const kinds = ['king', 'dragon', 'guardian'];
   for (let direction = 0; direction < 6; direction++) {
-    const source = stepInDirection(kingIndex, direction, 1);
-    const pieceCode = source != null ? cells[source] : null;
-    if (pieceCode && isEnemy(kingCode, pieceCode) && kindOf('king')) {
+    const oneStep = stepInDirection(kingIndex, direction, 1);
+    if (oneStep === null) continue;
+    const oneStepCode = cells[oneStep];
+    if (oneStepCode && isEnemy(kingCode, oneStepCode) && kinds.includes(kindOf(oneStepCode))) {
+      return true;
+    }
+    const twoSteps = stepInDirection(kingIndex, direction, 2);
+    if (twoSteps === null) continue;
+    const twoStepCode = cells[twoSteps];
+    if (twoStepCode && isEnemy(kingCode, twoStepCode) && kindOf(twoStepCode) === 'dragon') {
       return true;
     }
   }

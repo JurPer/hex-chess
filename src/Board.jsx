@@ -106,22 +106,22 @@ export default class HexChessBoard extends React.Component {
 
     // Play phase: selection and commit are local UI
     const pieceCode = G.cells[id];
-
-    // 1) select your own piece
-    if (pieceCode && colorOf(pieceCode) === color) {
-      const legalTargets = legalMovesFromCells(G.cells, id);
-      this.setState({ selectedIndex: id, legalTargets });
-      return;
-    }
-
-    // 2) commit if clicking a legal target
     const { selectedIndex, legalTargets } = this.state;
-    if (selectedIndex != null && legalTargets.includes(id)) {
+
+    // 1) has selection: commit if clicking a legal target
+    if (selectedIndex !== null && legalTargets.includes(id)) {
       this.props.moves.play(selectedIndex, id);
       this.setState({
         selectedIndex: null,
         legalTargets: [],
       });
+      return;
+    }
+
+    // 2) select your own piece
+    if (pieceCode && colorOf(pieceCode) === color) {
+      const legalTargets = legalMovesFromCells(G.cells, id);
+      this.setState({ selectedIndex: id, legalTargets });
       return;
     }
 

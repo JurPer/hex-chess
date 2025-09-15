@@ -77,6 +77,16 @@ All moves follow the hexagrams orthogonal directions.
 - Moves any number of steps in any forward facing direction.
 - White moves "up" | Black moves "down"
 
+### Dragon
+
+- Moves one or two steps in any orthogonal direction.
+- If it moves two steps and captures an enemy piece, ANY piece in the intermediate cell is also captured.
+
+### Guardian
+
+- Moves one step in any orthogonal direction.
+- Can swap places with a friendly piece.
+
 ## Running locally
 
 1. Install
@@ -98,7 +108,7 @@ All moves follow the hexagrams orthogonal directions.
 
 ## How to add more pieces (example: Rook)
 
-1. PIECES: add your piece for white and black. 'WR' and 'BR' are the **piece codes** for the rooks.
+1. rules.js/`PIECES`: add your piece for white and black. 'WR' and 'BR' are the **piece codes** for the rooks.
 
 ```
 export const PIECES = {
@@ -109,7 +119,7 @@ export const PIECES = {
 }
 ```
 
-2. SETUP_POOL: add your **piece code** for white and black.
+2. rules.js/`SETUP_POOL`: add your **piece code** for white and black.
 
 ```
 export const SETUP_POOL = Object.freeze({
@@ -118,17 +128,7 @@ export const SETUP_POOL = Object.freeze({
 });
 ```
 
-3. legalMovesFromCells: add your **move** function.
-
-```
-export function legalMovesFromCells(cells, index) {
-  [...]
-    case 'rook': return rookMoves(cells, index);
-  [...]
-}
-```
-
-4. Implement your **move** function. Cells simply contain the piece code as a string or null if empty.
+3. rules.js: implement your **move** function. Cells simply contain the piece code as a string or null if empty. The move function returns an array of legal indices.
 
 ```
 function rookMoves(cells, index) {
@@ -139,7 +139,19 @@ function rookMoves(cells, index) {
 }
 ```
 
-5. (Optional) isKingAttacked: This is used by the **AI** to not blunder their king in one turn. Also add your move logic here, if you want.
+4. rules.js/`legalMovesFromCells`: add your **move** function.
+
+```
+export function legalMovesFromCells(cells, index) {
+  [...]
+    case 'rook': return rookMoves(cells, index);
+  [...]
+}
+```
+
+5. (Optional) Some pieces may have special abilities that cannot be simply described by moving from one cell to another. In this case, you may need to implement additional logic in Game.js/`applyPlay`. This may also be needed inside rules.js/`nextStateCells`, if you want the **AI** to include your move logic.
+
+6. (Optional) rules.js/`isKingAttacked`: this function is used by the **AI** to not blunder their king in one turn. Also add your move logic here, if you want.
 
 ```
 export function isKingAttacked(cells, kingColor) {
@@ -151,7 +163,7 @@ export function isKingAttacked(cells, kingColor) {
 }
 ```
 
-6. (Optional) Add **images** of your pieces to the **assets** folder. Name them after your piece code (e.g. '**wr.svg**')
+7. (Optional) Add **images** of your pieces to the **assets** folder. Name them after your piece code (e.g. '**wr.svg**').
 
 ## Attributions
 
@@ -162,6 +174,15 @@ Images for Pawns, Kings, Knights, Rooks, Bishops, Queens:
 Images for Chargers:
 
 - NikNaks93, [CC BY-SA 3.0](http://creativecommons.org/licenses/by-sa/3.0/), via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
+
+Images for Dragons:
+
+- Cburnett (knight); Conorpetersen (dragon), [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0), via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
+
+Images for Guardians:
+
+- Black: Sunny3113, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0), via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
+- White: Uray M. János, [GFDL](http://www.gnu.org/copyleft/fdl.html), via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
 
 Image for chessboard icon:
 
