@@ -1,38 +1,4 @@
 /**
- * Converts axial coordinates to pixel coordinates for a flat topped hexagon
- *
- * @export
- * @param {number} q 
- * @param {number} r 
- * @param {number} size 
- * @returns {{ x: number; y: number; }} 
- */
-export function axialToPixelFlat(q, r, size) {
-  const x = size * (3 / 2) * q;
-  const y = size * Math.sqrt(3) * (r + q / 2);
-  return { x, y };
-}
-
-/**
- * Calculates the points / vertices of a flat-topped hexagon
- *
- * @export
- * @param {number} cx 
- * @param {number} cy 
- * @param {number} size 
- * @returns {String} "x1,y1 x2,y2 x3,y3 ..."
- */
-export function hexPointsFlat(cx, cy, size) {
-  // flat-top corners at 0°, 60°, …, 300°
-  const pts = [];
-  for (let i = 0; i < 6; i++) {
-    const a = (Math.PI / 180) * (60 * i);
-    pts.push(`${cx + size * Math.cos(a)},${cy + size * Math.sin(a)}`);
-  }
-  return pts.join(" ");
-}
-
-/**
  * Six cube orthogonal directions (flat-top hexes).
  * - 0: N | 1: NW | 2: SW | 3: S | 4: SE | 5: NE
  * @type {[number,number, number][]} 
@@ -54,6 +20,16 @@ const CUBE_DIRS = [
 export const AXIAL_DIRS = [
   [0, -1], [-1, 0], [-1, 1],
   [0, 1], [1, 0], [1, -1],
+];
+
+/**
+ * Six axial diagonal directions(flat - top hexes).
+ * - 0: E | 1: NE | 2: NW | 3: W | 4: SW | 5: SE
+  * @type { [number, number][] }
+ */
+export const AXIAL_DIAGS = [
+  [2, -1], [1, -2], [-1, -1],
+  [-2, 1], [-1, 2], [1, 1],
 ];
 
 /**
@@ -89,6 +65,39 @@ const toAxial = ([x, , z]) => ({ q: x, r: z });
  * @returns {string} 
  */
 const cubeKey = (c) => `${c[0]},${c[1]},${c[2]}`;
+/**
+ * Converts axial coordinates to pixel coordinates for a flat topped hexagon
+ *
+ * @export
+ * @param {number} q 
+ * @param {number} r 
+ * @param {number} size 
+ * @returns {{ x: number; y: number; }} 
+ */
+export function axialToPixelFlat(q, r, size) {
+  const x = size * (3 / 2) * q;
+  const y = size * Math.sqrt(3) * (r + q / 2);
+  return { x, y };
+}
+
+/**
+ * Calculates the points / vertices of a flat-topped hexagon
+ *
+ * @export
+ * @param {number} cx 
+ * @param {number} cy 
+ * @param {number} size 
+ * @returns {String} "x1,y1 x2,y2 x3,y3 ..."
+ */
+export function hexPointsFlat(cx, cy, size) {
+  // flat-top corners at 0°, 60°, …, 300°
+  const pts = [];
+  for (let i = 0; i < 6; i++) {
+    const a = (Math.PI / 180) * (60 * i);
+    pts.push(`${cx + size * Math.cos(a)},${cy + size * Math.sin(a)}`);
+  }
+  return pts.join(" ");
+}
 
 /**
  * Creates a hexagonal grid in cube coords (default with radius 2 = 19 cells)

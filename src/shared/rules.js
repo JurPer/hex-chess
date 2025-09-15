@@ -5,7 +5,7 @@
  * @typedef {'WR'|'WN'|'WB'|'WQ'|'WK'|'WC'|'WD'|'WG'|'WF'|'WM'|'BR'|'BN'|'BB'|'BQ'|'BK'|'BC'|'BD'|'BG'|'BF'|'BM'} PieceCode
  */
 
-import { GRID, AXIAL_DIRS, getIndexOf } from './hexGrid.js';
+import { GRID, AXIAL_DIRS, AXIAL_DIAGS, getIndexOf } from './hexGrid.js';
 
 /**
  * Piece metadata table.
@@ -46,8 +46,8 @@ const PIECES = {
  * @type {PieceCode[]}
  */
 export const SETUP_POOL = Object.freeze({
-  W: Object.freeze(['WK', 'WC', 'WD', 'WG', 'WF', 'WN', 'WB', 'WQ', 'WR']),
-  B: Object.freeze(['BK', 'BC', 'BD', 'BG', 'BF', 'BN', 'BB', 'BQ', 'BR']),
+  W: Object.freeze(['WK', 'WC', 'WD', 'WG', 'WF', 'WM', 'WN', 'WB', 'WQ', 'WR']),
+  B: Object.freeze(['BK', 'BC', 'BD', 'BG', 'BF', 'BM', 'BN', 'BB', 'BQ', 'BR']),
 });
 
 /**
@@ -151,14 +151,27 @@ const isPawnStart = (color, index) => PAWN_START[color].includes(index);
  * @param {number} [steps=1]
  * @returns {number|null} destination index or `null` if you walk off the board.
  */
-function stepInDirection(from, direction, steps = 1) {
+export function stepInDirection(from, direction, steps = 1) {
   const { q, r } = GRID[from];
   const [dq, dr] = AXIAL_DIRS[direction];
   return getIndexOf(q + dq * steps, r + dr * steps);
 }
 
 /**
- * Slide/ray moves in a single direction until blocked.
+ * Step from a starting cell by axial diagonal and number of steps.
+ * @param {number} from
+ * @param {number} direction 0..5 (see {@link AXIAL_DIAGS})
+ * @param {number} [steps=1]
+ * @returns {number|null} destination index or `null` if you walk off the board.
+ */
+export function stepInDiagonal(from, direction, steps = 1) {
+  const { q, r } = GRID[from];
+  const [dq, dr] = AXIAL_DIAGS[direction];
+  return getIndexOf(q + dq * steps, r + dr * steps);
+}
+
+/**
+ * Slide/ray moves in a single orthogonal direction until blocked.
  * Continues through empty squares, includes the first enemy square, then stops.
  * @param {Cells} cells
  * @param {number} from
@@ -189,6 +202,37 @@ function slide(cells, from, direction) {
 }
 
 /**
+ * Slide/ray moves in a single diagonal direction until blocked.
+ * Continues through empty squares, includes the first enemy square, then stops.
+ * @param {Cells} cells
+ * @param {number} from
+ * @param {number} direction
+ * @returns {number[]} reachable destination indices
+ */
+function slideDiagonal(cells, from, direction) {
+  const legalMoves = [];
+  const pieceCode = cells[from];
+
+  let current = from;
+  while (true) {
+    const next = stepInDiagonal(current, direction, 1);
+    if (next === null) break;
+
+    const targetCode = cells[next];
+    if (targetCode === null) { // empty: can continue
+      legalMoves.push(next);
+      current = next;
+      continue;
+    }
+    if (isEnemy(pieceCode, targetCode)) { // first enemy: capture and stop
+      legalMoves.push(next);
+    }
+    break; // own piece or enemy — stop the slide / ray
+  }
+  return legalMoves;
+}
+
+/**
  * Dispatcher: legal moves for the piece on `cells[id]`.
  * Provided as a cells-only helper for UI and tests.
  *
@@ -196,7 +240,7 @@ function slide(cells, from, direction) {
  * @param {number} index
  * @returns {number[]} destination indices
  */
-export function legalMovesFromCells(cells, index) {
+export function legalMovesFromCells(cells, index, turnNumber) {
   const pieceCode = cells[index];
   if (!pieceCode) return [];
 
@@ -211,6 +255,7 @@ export function legalMovesFromCells(cells, index) {
     case 'dragon': return dragonMoves(cells, index);
     case 'guardian': return guardianMoves(cells, index);
     case 'fool': return foolMoves(cells, index);
+    case 'moon': return moonMoves(cells, index, turnNumber);
   }
 
   return [];
@@ -426,6 +471,15 @@ function foolMoves(cells, index) {
   return knightMoves(cells, index);
 }
 
+function moonMoves(cells, index, turnNumber) {
+  const pieceCode = cells[index];
+  if (!pieceCode) return [];
+  if (colorOf(pieceCode) === 'W') turnNumber -= 1;
+  if (turnNumber % 2 === 0) return bishopMoves(cells, index);
+  const directions = [1, 2, 4, 5];
+  return directions.flatMap(d => slideDiagonal(cells, index, d));
+}
+
 
 /* ****** AI Helper ****** */
 
@@ -492,7 +546,7 @@ function getKingIndex(cells, color) {
  * @param {Color} kingColor
  * @returns {boolean}
  */
-export function isKingAttacked(cells, kingColor) {
+export function isKingAttacked(cells, kingColor, turnNumber) {
   let kingIndex = getKingIndex(cells, kingColor);
   if (kingIndex < 0) return true;
   const kingCode = cells[kingIndex];
@@ -541,7 +595,25 @@ export function isKingAttacked(cells, kingColor) {
     return true;
   }
 
-  // 4) King, Dragon or Guardian attacks
+  // 4) Moon attacks
+  if (colorOf(kingCode) === 'B') turnNumber += 1;
+  if (turnNumber % 2 === 1) {
+    for (const direction of [0, 1, 3, 4]) {
+      let current = kingIndex;
+      while (true) {
+        const next = stepInDiagonal(current, direction, 1);
+        if (next == null) break;
+        const pieceCode = cells[next];
+        if (pieceCode === null) { current = next; continue; }
+        if (isEnemy(kingCode, pieceCode) && kindOf(pieceCode) === 'moon') return true;
+        break;
+      }
+    }
+  } else if (isSlideAttacked([0, 1, 3, 4], ['moon'])) {
+    return true;
+  }
+
+  // 5) King, Dragon or Guardian attacks
   kinds = ['king', 'dragon', 'guardian'];
   for (let direction = 0; direction < 6; direction++) {
     const oneStep = stepInDirection(kingIndex, direction, 1);

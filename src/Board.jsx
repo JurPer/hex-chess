@@ -120,7 +120,7 @@ export default class HexChessBoard extends React.Component {
 
     // 2) select your own piece
     if (pieceCode && colorOf(pieceCode) === color) {
-      const legalTargets = legalMovesFromCells(G.cells, id);
+      const legalTargets = legalMovesFromCells(G.cells, id, this.props.G.movesLog.length);
       this.setState({ selectedIndex: id, legalTargets });
       return;
     }
@@ -231,10 +231,10 @@ export default class HexChessBoard extends React.Component {
                   <tr key={index}>
                     <td className="col-turn">{index + 1}</td>
                     <td className={`mv ${isActive && lastColor === 'W' ? 'active' : ''}`}>
-                      {color === 'W' ? row.W : row.W.replace('F', 'N')}
+                      {color === 'W' ? row.W : row.W ? row.W.replace('F', 'N') : ''}
                     </td>
                     <td className={`mv ${isActive && lastColor === 'B' ? 'active' : ''}`}>
-                      {color === 'B' ? row.B : row.B.replace('F', 'N')}
+                      {color === 'B' ? row.B : row.B ? row.B.replace('F', 'N') : ''}
                     </td>
                   </tr>
                 );

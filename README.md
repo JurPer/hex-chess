@@ -92,6 +92,11 @@ All moves follow the hexagrams orthogonal directions.
 - Moves like the Knight and looks like it to the opponent.
 - When captured, also removes the piece that captured it.
 
+### Moon
+
+- On even turns: moves like a bishop.
+- On odd turns: moves any number of steps along the non-vertical diagonal directions.
+
 ## Running locally
 
 1. Install
@@ -188,6 +193,14 @@ Images for Guardians:
 
 - Black: Sunny3113, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0), via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
 - White: Uray M. János, [GFDL](http://www.gnu.org/copyleft/fdl.html), via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
+
+Images for Fools:
+
+- [tdl44.png](https://commons.wikimedia.org/wiki/File:Chess_tdl44.png) and [tll44.png](https://commons.wikimedia.org/wiki/File:Chess_tll44.png): Mykol Dolgalov / derivative work: NikNaks93, [CC BY-SA 3.0](http://creativecommons.org/licenses/by-sa/3.0/>), via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
+
+Images for Moon:
+
+- [wdl44.png](https://commons.wikimedia.org/wiki/File:Chess_wdl44.png) and [wll44.png](https://commons.wikimedia.org/wiki/File:Chess_wll44.png): OmegaChessFan / derivative work: NikNaks93, [CC BY-SA 3.0](http://creativecommons.org/licenses/by-sa/3.0/), via [Wikimedia Commons](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
 
 Image for chessboard icon:
 

@@ -224,7 +224,7 @@ function generateAllMoves(G, color) {
  * @returns {number[]}
  */
 function pieceLegalMoves(G, index) {
-  return legalMovesFromCells(G.cells, index);
+  return legalMovesFromCells(G.cells, index, G.movesLog.length);
 }
 
 
@@ -389,7 +389,7 @@ export const HexChess = {
       const allMoves = generateAllMoves(G, color);
       const safeMoves = allMoves.filter(({ from, to }) => {
         const nextCells = nextStateCells(G.cells, from, to);
-        return !isKingAttacked(nextCells, color);
+        return !isKingAttacked(nextCells, color, G.movesLog.length);
       });
       // if none safe, play anything
       const chosenMoves = safeMoves.length ? safeMoves : allMoves;
