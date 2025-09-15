@@ -41,7 +41,7 @@ When both players have finished placing, the game automatically switches to the 
 
 ## Pieces
 
-All moves follow the hexagrams orthogonal directions.
+Moves usually follow the hexagrams orthogonal directions. The moon piece is an exception, as it can move on the "diagonals".
 
 ### Pawn
 
@@ -80,7 +80,7 @@ All moves follow the hexagrams orthogonal directions.
 ### Dragon
 
 - Moves one or two steps in any orthogonal direction.
-- If it moves two steps and captures an enemy piece, ANY piece in the intermediate cell is also captured.
+- If it moves two steps and captures an enemy piece, **ANY** piece in the intermediate cell is also captured.
 
 ### Guardian
 
@@ -89,7 +89,7 @@ All moves follow the hexagrams orthogonal directions.
 
 ### Fool
 
-- Moves like the Knight and looks like it to the opponent.
+- Moves like the Knight and looks like one to the opponent.
 - When captured, also removes the piece that captured it.
 
 ### Moon
