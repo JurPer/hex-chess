@@ -4,8 +4,8 @@ A small turn-based board game you can [play in the browser](https://play-hex-che
 
 ## What is this?
 
-- basically [Starchess](<[url](https://en.wikipedia.org/wiki/Hexagonal_chess#Starchess)>), a hexagonal chess-variant, but with added pieces.
-- playable prototype built with [Vite](https://vite.dev/)+[React](<[url](https://react.dev/)>) and [boardgame.io](<[url](https://boardgame.io/)>).
+- basically [Starchess](https://en.wikipedia.org/wiki/Hexagonal_chess#Starchess), a hexagonal chess-variant, but with added pieces.
+- playable prototype built with [Vite](https://vite.dev/)+[React](https://react.dev/) and [boardgame.io](https://boardgame.io/).
 - hosted with [render](https://render.com/) and [vercel](https://vercel.com/)
 - You can play on: https://play-hex-chess.vercel.app/.
 
