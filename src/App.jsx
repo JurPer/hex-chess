@@ -1,11 +1,11 @@
 import React from 'react';
-import './App.css';
+import './app.css';
 
 import { Client } from 'boardgame.io/react';
 import { SocketIO } from 'boardgame.io/multiplayer';
 import { Lobby } from 'boardgame.io/react';
-import { HexChess } from './Game';
-import HexChessBoard from './Board';
+import { HexChess } from './game';
+import HexChessBoard from './board';
 
 /**
  * Enum-like type representing the application run mode.
@@ -26,7 +26,7 @@ class AppType {
   }
 }
 
-const multiplayerServerUrl = import.meta.env.PROD
+const serverURL = import.meta.env.PROD
   ? import.meta.env.VITE_SERVER_URL ?? ''
   : 'http://localhost:8000';
 
@@ -56,7 +56,7 @@ class App extends React.Component {
         const HexChessClient = Client({
           game: HexChess,
           board: HexChessBoard,
-          multiplayer: SocketIO({ server: multiplayerServerUrl }),
+          multiplayer: SocketIO({ server: serverURL }),
         });
         if (this.state.playerID === null) {
           return (
@@ -77,8 +77,8 @@ class App extends React.Component {
         return (
           <div>
             <Lobby
-              gameServer={multiplayerServerUrl}
-              lobbyServer={multiplayerServerUrl}
+              gameServer={serverURL}
+              lobbyServer={serverURL}
               gameComponents={[
                 {
                   game: HexChess,
