@@ -65,6 +65,14 @@ export default class HexChessBoard extends React.Component {
     return this.props.ctx?.currentPlayer === '0' ? 'W' : 'B';
   }
 
+  getPlayerColor() {
+    return this.props.isMultiplayer
+      ? this.props.playerID === '0'
+        ? 'W'
+        : 'B'
+      : this.getCurrentColor();
+  }
+
   componentDidUpdate(prevProps) {
     // Clear selection on phase change / turn change
     if (
@@ -96,9 +104,9 @@ export default class HexChessBoard extends React.Component {
    */
   onHexClick = (id) => {
     const { G } = this.props;
-    const color = this.getCurrentColor();
+    const playerColor = this.getPlayerColor();
     if (this.isSetupPhase()) {
-      if (G.cells[id] == null && isBackRank(color, id)) {
+      if (G.cells[id] == null && isBackRank(playerColor, id)) {
         this.setState({ selectedIndex: id });
       }
       return;
@@ -119,7 +127,7 @@ export default class HexChessBoard extends React.Component {
     }
 
     // 2) select your own piece
-    if (pieceCode && colorOf(pieceCode) === color) {
+    if (pieceCode && colorOf(pieceCode) === playerColor) {
       const legalTargets = legalMovesFromCells(G.cells, id, this.props.G.movesLog.length);
       this.setState({ selectedIndex: id, legalTargets });
       return;
@@ -131,15 +139,15 @@ export default class HexChessBoard extends React.Component {
 
   renderSetupPanel() {
     if (!this.isSetupPhase()) return null;
-    const color = this.getCurrentColor();
-    const setupPool = this.props.G.setupPool[color];
+    const playerColor = this.getPlayerColor();
+    const setupPool = this.props.G.setupPool[playerColor];
     const { selectedIndex } = this.state;
 
     const canBulkPlace = setupPool.length > 0;
 
     return (
       <div className="setup-panel">
-        <div className="setup-hint">Setup: {color === 'W' ? 'White' : 'Black'}</div>
+        <div className="setup-hint">Setup: {playerColor === 'W' ? 'White' : 'Black'}</div>
         <div className="setup-hint">
           {selectedIndex == null
             ? 'Click an empty back-rank hex'
@@ -196,8 +204,8 @@ export default class HexChessBoard extends React.Component {
   }
 
   renderSidePanel() {
-    const color = this.getCurrentColor();
-    const playerLabel = color === 'W' ? 'White' : 'Black';
+    const playerColor = this.getPlayerColor();
+    const turnBannerString = (this.getCurrentColor() === 'W' ? 'White' : 'Black') + ' to move';
     const { lastColor, lastIndex } = this.state;
     const movesLog = this.props.G.movesLog;
 
@@ -213,7 +221,7 @@ export default class HexChessBoard extends React.Component {
           Sounds
         </label>
         <div className="turn-banner">
-          <span>{playerLabel} to move</span>
+          <span>{turnBannerString}</span>
         </div>
         <div className="move-table-wrap" ref={(elem) => (this.moveWrap = elem)}>
           <table className="move-table">
@@ -227,14 +235,15 @@ export default class HexChessBoard extends React.Component {
             <tbody>
               {movesLog.map((row, index) => {
                 const isActive = index === lastIndex;
+                // replace 'F' with 'N' to hide the fools
                 return (
                   <tr key={index}>
                     <td className="col-turn">{index + 1}</td>
                     <td className={`mv ${isActive && lastColor === 'W' ? 'active' : ''}`}>
-                      {color === 'W' ? row.W : row.W ? row.W.replace('F', 'N') : ''}
+                      {playerColor === 'W' ? row.W : row.W ? row.W.replace('F', 'N') : ''}
                     </td>
                     <td className={`mv ${isActive && lastColor === 'B' ? 'active' : ''}`}>
-                      {color === 'B' ? row.B : row.B ? row.B.replace('F', 'N') : ''}
+                      {playerColor === 'B' ? row.B : row.B ? row.B.replace('F', 'N') : ''}
                     </td>
                   </tr>
                 );
@@ -276,7 +285,7 @@ export default class HexChessBoard extends React.Component {
     const { selectedIndex, legalTargets } = this.state;
 
     const selectionColor =
-      this.getCurrentColor() === 'W' ? 'var(--selection-light)' : 'var(--selection-dark)';
+      this.getPlayerColor() === 'W' ? 'var(--selection-light)' : 'var(--selection-dark)';
 
     return (
       <div className="game-layout">
@@ -297,7 +306,7 @@ export default class HexChessBoard extends React.Component {
               // check if pieceCode is enemy fool: if true, swap with knight's code
               if (
                 pieceCode &&
-                colorOf(pieceCode) !== this.getCurrentColor() &&
+                colorOf(pieceCode) !== this.getPlayerColor() &&
                 kindOf(pieceCode) === 'fool'
               ) {
                 pieceCode = colorOf(pieceCode) + 'N';

@@ -60,6 +60,7 @@
 
 .setup-panel {
   display: grid;
+  max-width: 450px;
   justify-content: center;
   margin-top: 8px;
   gap: 8px;
@@ -84,6 +85,7 @@
 }
 .setup-pieces {
   display: flex;
+  justify-content: center;
   gap: 6px;
   flex-wrap: wrap;
 }

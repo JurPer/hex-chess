@@ -46,18 +46,25 @@ body {
 #lobby-view {
   color: var(--font-light);
   font-size: 20px;
-  text-align: center;
+  text-align: left;
+  justify-content: left;
 }
-
-#lobby-view table {
+#instances {
   font-size: 25px;
-  display: flex;
-  justify-content: center;
+  width: 100%;
   border-collapse: collapse;
 }
-
-#lobby-view tr {
+#instances th,
+#instances td {
   border: 2px solid var(--secondary-color);
+  padding: 6px 10px;
+}
+
+.phase {
+  margin: 2%;
+}
+.bgio-client {
+  margin: 2%;
 }
 
 #lobby-view button,
