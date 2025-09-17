@@ -1,7 +1,7 @@
 import { Server, Origins } from "boardgame.io/dist/cjs/server.js";
 import { HexChess } from "./game.js";
-//import express from 'express';
-//import cors from 'cors';
+import express from 'express';
+import cors from 'cors';
 
 // env
 // eslint-disable-next-line no-undef
@@ -19,4 +19,16 @@ const server = Server({
   origins: [clientOrigin],
 });
 
-server.run(appPort);
+const app = express();
+app.use(cors({ origin: clientOrigin, credentials: true }));
+
+// Basic health endpoint so Render can probe the service
+app.get('/healthz', (_req, res) => res.status(200).send('ok'));
+
+// Start HTTP server and attach BGIO to it
+const httpServer = app.listen(appPort, () => {
+  console.log(`Server listening on ${appPort}`);
+});
+
+
+server.run({ port: httpServer });
