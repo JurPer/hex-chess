@@ -26,6 +26,10 @@ class AppType {
   }
 }
 
+const multiplayerServerUrl = import.meta.env.PROD
+  ? import.meta.env.VITE_SERVER_URL ?? ''
+  : 'http://localhost:8000';
+
 /**
  * Handles the landing page, asks for the app type and then loads the appropriate game component based on the user's choice.
  *
@@ -52,7 +56,7 @@ class App extends React.Component {
         const HexChessClient = Client({
           game: HexChess,
           board: HexChessBoard,
-          multiplayer: SocketIO({ server: 'localhost:8000' }),
+          multiplayer: SocketIO({ server: multiplayerServerUrl }),
         });
         if (this.state.playerID === null) {
           return (
@@ -73,9 +77,8 @@ class App extends React.Component {
         return (
           <div>
             <Lobby
-              //needs to be https when I deploy
-              gameServer={`http://${window.location.hostname}:8000`}
-              lobbyServer={`http://${window.location.hostname}:8000`}
+              gameServer={multiplayerServerUrl}
+              lobbyServer={multiplayerServerUrl}
               gameComponents={[
                 {
                   game: HexChess,

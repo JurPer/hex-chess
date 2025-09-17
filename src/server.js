@@ -1,10 +1,11 @@
-/* 
-const { Server, Origins } = require('boardgame.io/server');
-const { HexChess } = require('./Game');
- */
-
 import { Server, Origins } from "boardgame.io/dist/cjs/server.js";
 import { HexChess } from "./Game.js";
+//import express from 'express';
+//import cors from 'cors';
+
+// env
+const clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173';
+const appPort = Number(process.env.PORT ?? 8000);
 
 /**
  * Server instance created from boardgame.io
@@ -13,7 +14,7 @@ import { HexChess } from "./Game.js";
  */
 const server = Server({
   games: [HexChess],
-  origins: [Origins.LOCALHOST_IN_DEVELOPMENT],
+  origins: [clientOrigin],
 });
 
-server.run(8000);
+server.run(appPort);
