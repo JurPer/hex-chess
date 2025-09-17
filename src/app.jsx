@@ -44,9 +44,9 @@ class App extends React.Component {
       return (
         <div className="app">
           <button onClick={() => this.setState({ appType: AppType.Solo })}>Solo</button>
-          <button onClick={() => this.setState({ appType: AppType.Multiplayer })}>
+          {/* <button onClick={() => this.setState({ appType: AppType.Multiplayer })}>
             Multiplayer
-          </button>
+          </button> */}
           <button onClick={() => this.setState({ appType: AppType.Lobby })}>Lobby</button>
         </div>
       );
