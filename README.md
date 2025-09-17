@@ -1,15 +1,18 @@
 # Hex Chess
 
-A small turn-based board game you can play in the browser. It is basically [Starchess](<[url](https://en.wikipedia.org/wiki/Hexagonal_chess#Starchess)>), a hexagonal chess-variant, but with added pieces.
+A small turn-based board game you can [play in the browser](https://play-hex-chess.vercel.app/).
 
 ## What is this?
 
-- A playable prototype built with [React](<[url](https://react.dev/)>) and [boardgame.io](<[url](https://boardgame.io/)>).
+- basically [Starchess](<[url](https://en.wikipedia.org/wiki/Hexagonal_chess#Starchess)>), a hexagonal chess-variant, but with added pieces.
+- playable prototype built with [Vite](https://vite.dev/)+[React](<[url](https://react.dev/)>) and [boardgame.io](<[url](https://boardgame.io/)>).
+- hosted with [render](https://render.com/) and [vercel](https://vercel.com/)
+- You can play on: https://play-hex-chess.vercel.app/.
 
 ## The Board
 
 - **Shape**: a horizontally oriented regular hexagram, consisting of 37 numbered cells.
-- **Orientation**: orthogonal directions are defined as the six directions to a cell's edge-adjacent neighbours. (N, NW, SW, S, SE, NE)
+- **Orientation**: orthogonal directions are defined as the six directions to a cell's edge-adjacent neighbours (N, NW, SW, S, SE, NE); diagonal directions are defined as the six directions to a cell's corner (E, NE, NW, W, SW, SE).
 
 ## Setup Phase
 
@@ -37,11 +40,11 @@ When both players have finished placing, the game automatically switches to the 
 
 ### Promotion
 
-- Pawns that reach the opponent’s back rank promote to a **queen** immediately.
+- **Pawns** that reach the opponent’s back rank promote to a **queen** immediately.
 
 ## Pieces
 
-Moves usually follow the hexagrams orthogonal directions. The moon piece is an exception, as it can move on the "diagonals".
+Moves usually follow the hexagrams orthogonal directions. The moon piece is an exception, as it can move on the diagonals.
 
 ### Pawn
 
@@ -107,14 +110,16 @@ Moves usually follow the hexagrams orthogonal directions. The moon piece is an e
 
 `npm run dev`
 
-3. Open the printed localhost URL in your browser.
+3. Open the localhost URL in your browser.
 
 ## Project structure (overview)
 
 - hexGrid.js – Board shape and coordinate helpers (axial directions, index lookup).
-- rules.js – Pure rules: piece metadata, setup constants, move definitions
-- Game.js – boardgame.io glue: phases (setup → play), moves (placePiece, placeAllFixed, placeAllRandom, play), and simple AI enumeration.
-- Board.jsx – React board: renders the grid, highlights legal moves, handles selection and setup UI.
+- rules.js – Pure rules: piece metadata, setup constants, move definitions.
+- game.js – boardgame.io game: phases, moves, logging, and simple AI enumeration.
+- board.jsx – React UI: renders the board, highlights legal moves, handles selection and setup UI.
+- app.jsx - React UI: landing page and play mode selection. `VITE_SERVER_URL` is set on [vercel](https://vercel.com/) and links to the server on [render](https://render.com/).
+- server.js - boardgame.io server. `CLIENT_ORIGIN` is set on [render](https://render.com/) and links to [vercel](https://vercel.com/).
 
 ## How to add more pieces (example: Rook)
 
@@ -159,7 +164,7 @@ export function legalMovesFromCells(cells, index) {
 }
 ```
 
-5. (Optional) Some pieces may have special abilities that cannot be simply described by moving from one cell to another. In this case, you may need to implement additional logic in Game.js/`applyPlay`. This may also be needed inside rules.js/`nextStateCells`, if you want the **AI** to include your move logic.
+5. (Optional) Some pieces may have special abilities that cannot be simply described by moving from one cell to another. In this case, you may need to implement additional logic in game.js/`applyPlay`. This may also be needed inside rules.js/`nextStateCells`, if you want the **AI** to include your move logic.
 
 6. (Optional) rules.js/`isKingAttacked`: this function is used by the **AI** to not blunder their king in one turn. Also add your move logic here, if you want.
 
