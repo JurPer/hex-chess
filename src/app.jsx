@@ -4,8 +4,8 @@ import './app.css';
 import { Client } from 'boardgame.io/react';
 import { SocketIO } from 'boardgame.io/multiplayer';
 import { Lobby } from 'boardgame.io/react';
-import { HexChess } from './gameTemp';
-import HexChessBoard from './boardTemp';
+import { HexChess } from './game';
+import HexChessBoard from './board';
 
 /**
  * Enum-like type representing the application run mode.

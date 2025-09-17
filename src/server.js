@@ -1,5 +1,5 @@
 import { Server, Origins } from "boardgame.io/dist/cjs/server.js";
-import { HexChess } from "./gameTemp.js";
+import { HexChess } from "./game.js";
 //import express from 'express';
 //import cors from 'cors';
 
