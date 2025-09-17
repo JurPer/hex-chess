@@ -265,6 +265,9 @@ export const HexChess = {
     };
   },
 
+  minPlayers: 2,
+  maxPlayers: 2,
+
   turn: {
     minMoves: 1,
     maxMoves: 1,
